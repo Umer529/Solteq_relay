@@ -1,10 +1,10 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { can, messagePaginationSchema, postMessageSchema, projectIdSchema } from "@relay/shared";
+import { can, editMessageSchema, messageIdSchema, messagePaginationSchema, postMessageSchema, projectIdSchema } from "@relay/shared";
 import { AppError } from "../lib/errors.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireMember } from "../middleware/require-member.js";
-import { getMessages, postMessage } from "../services/messages.js";
+import { deleteMessage, getMessage, getMessages, postMessage, updateMessage } from "../services/messages.js";
 
 export const messagesRouter = Router();
 
@@ -50,4 +50,30 @@ messagesRouter.post("/:id/messages", messageRateLimit, requireMember, async (req
   }
 
   response.status(201).json({ data: await postMessage(projectId, input.body, user.id) });
+});
+
+messagesRouter.patch("/:id/messages/:messageId", requireMember, async (request, response) => {
+  const projectId = projectIdSchema.parse(request.params.id);
+  const messageId = messageIdSchema.parse(request.params.messageId);
+  const input = editMessageSchema.parse(request.body);
+  const user = actor(request);
+  const member = membership(request);
+  const current = await getMessage(projectId, messageId);
+  if (!can(member.role, "message.edit", { actorId: user.id, message: { userId: current.userId } })) {
+    throw new AppError(403, "FORBIDDEN", "Only the message author can edit it.");
+  }
+  response.json({ data: await updateMessage(messageId, input.body, user.id) });
+});
+
+messagesRouter.delete("/:id/messages/:messageId", requireMember, async (request, response) => {
+  const projectId = projectIdSchema.parse(request.params.id);
+  const messageId = messageIdSchema.parse(request.params.messageId);
+  const user = actor(request);
+  const member = membership(request);
+  const current = await getMessage(projectId, messageId);
+  if (!can(member.role, "message.delete", { actorId: user.id, message: { userId: current.userId } })) {
+    throw new AppError(403, "FORBIDDEN", "You cannot delete this message.");
+  }
+  await deleteMessage(messageId, user.id);
+  response.status(204).send();
 });

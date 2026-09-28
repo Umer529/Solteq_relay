@@ -9,6 +9,7 @@ export const createTaskSchema = z.object({
   description: z.string().trim().max(4000).nullable().optional(),
   priority: taskPrioritySchema.default("medium"),
   assigneeId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   position: z.number().finite().default(0),
 });
 
@@ -18,6 +19,7 @@ export const updateTaskSchema = z
     description: z.string().trim().max(4000).nullable().optional(),
     priority: taskPrioritySchema.optional(),
     assigneeId: z.string().uuid().nullable().optional(),
+    dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, "At least one field is required.");
 

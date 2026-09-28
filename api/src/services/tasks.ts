@@ -20,6 +20,7 @@ interface TaskRow {
   status: TaskStatus;
   priority: TaskPriority;
   assignee_id: string | null;
+  due_date: string | null;
   created_by: string;
   completed_by: string | null;
   completed_at: string | null;
@@ -33,6 +34,7 @@ interface TaskInput {
   description?: string | null;
   priority: TaskPriority;
   assigneeId?: string | null;
+  dueDate?: string | null;
   position: number;
 }
 
@@ -53,6 +55,7 @@ function mapTask(row: TaskRow): Task {
     status: row.status,
     priority: row.priority,
     assigneeId: row.assignee_id,
+    dueDate: row.due_date,
     createdBy: row.created_by,
     completedBy: row.completed_by,
     completedAt: row.completed_at,
@@ -81,6 +84,7 @@ export async function createTask(projectId: string, input: TaskInput, actorId: s
     p_description: input.description ?? null,
     p_priority: input.priority,
     p_assignee_id: input.assigneeId ?? null,
+    p_due_date: input.dueDate ?? null,
     p_position: input.position,
     p_actor_id: actorId,
   });
@@ -99,6 +103,7 @@ export async function updateTask(
     p_description: input.description === undefined ? current.description : input.description,
     p_priority: input.priority ?? current.priority,
     p_assignee_id: input.assigneeId === undefined ? current.assigneeId : input.assigneeId,
+    p_due_date: input.dueDate === undefined ? current.dueDate : input.dueDate,
     p_actor_id: actorId,
   });
   if (error) throwDatabaseError(error);
@@ -182,7 +187,7 @@ export async function getProjectSnapshot(projectId: string): Promise<ProjectSnap
     id: string; project_id: string; actor_id: string | null; type: string; payload: Record<string, unknown>; created_at: string;
   }>;
   const messages = (messagesResult.data ?? []) as unknown as Array<{
-    id: string; project_id: string; user_id: string; body: string; created_at: string;
+    id: string; project_id: string; user_id: string; body: string; edited_at: string | null; created_at: string;
   }>;
 
   return {
@@ -209,6 +214,7 @@ export async function getProjectSnapshot(projectId: string): Promise<ProjectSnap
       projectId: row.project_id,
       userId: row.user_id,
       body: row.body,
+      editedAt: row.edited_at,
       createdAt: row.created_at,
     })),
   };

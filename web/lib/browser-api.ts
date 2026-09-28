@@ -73,3 +73,14 @@ export function fetchMessages(projectId: string, before: string, limit = 50): Pr
   const query = new URLSearchParams({ before, limit: String(limit) });
   return browserApiRequest(`/projects/${projectId}/messages?${query.toString()}`);
 }
+
+export function editMessage(projectId: string, messageId: string, body: string): Promise<Message> {
+  return browserApiRequest(`/projects/${projectId}/messages/${messageId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ body }),
+  });
+}
+
+export function deleteMessage(projectId: string, messageId: string): Promise<void> {
+  return browserApiRequest(`/projects/${projectId}/messages/${messageId}`, { method: "DELETE" });
+}

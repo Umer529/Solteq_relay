@@ -12,6 +12,8 @@ export const actions = [
   "task.delete",
   "task.changeStatus",
   "message.post",
+  "message.edit",
+  "message.delete",
   "project.view",
 ] as const;
 
@@ -30,6 +32,7 @@ export interface PermissionContext {
   currentTargetRole?: ProjectRole;
   ownerCount?: number;
   task?: PermissionTask;
+  message?: { userId: string };
 }
 
 const elevatedActions = new Set<Action>([
@@ -63,6 +66,13 @@ export function can(
   ctx?: PermissionContext,
 ): boolean {
   if (action === "project.view") return true;
+  if (action === "message.edit") {
+    return role !== "viewer" && ctx?.message?.userId === ctx?.actorId;
+  }
+  if (action === "message.delete") {
+    return role === "owner" || role === "admin" ||
+      (role === "member" && ctx?.message?.userId === ctx?.actorId);
+  }
 
   if (role === "owner") {
     if (action === "member.remove" || action === "member.changeRole") {

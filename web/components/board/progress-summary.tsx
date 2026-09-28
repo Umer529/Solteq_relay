@@ -2,7 +2,17 @@
 
 import type { Membership, Task } from "@relay/shared";
 
-export function ProgressSummary({ tasks, members }: { tasks: Task[]; members: Membership[] }) {
+export function ProgressSummary({
+  tasks,
+  members,
+  selectedCompleterId,
+  onSelectCompleter,
+}: {
+  tasks: Task[];
+  members: Membership[];
+  selectedCompleterId: string | null;
+  onSelectCompleter: (userId: string | null) => void;
+}) {
   const done = tasks.filter((task) => task.status === "done");
   const percent = tasks.length === 0 ? 0 : Math.round((done.length / tasks.length) * 100);
   const contributions = members
@@ -24,12 +34,19 @@ export function ProgressSummary({ tasks, members }: { tasks: Task[]; members: Me
       </div>
       <div className="contributions" aria-label="Completed requirements by member">
         {contributions.slice(0, 5).map(({ member, completed }) => (
-          <span key={member.userId} title={`${member.profile.displayName}: ${completed} completed`}>
+          <button
+            className={selectedCompleterId === member.userId ? "selected" : undefined}
+            key={member.userId}
+            type="button"
+            aria-pressed={selectedCompleterId === member.userId}
+            title={`Show ${completed} completed by ${member.profile.displayName}`}
+            onClick={() => onSelectCompleter(selectedCompleterId === member.userId ? null : member.userId)}
+          >
             <i style={{ backgroundColor: member.profile.avatarColor }}>
               {member.profile.displayName.charAt(0).toUpperCase()}
             </i>
             <b>{completed}</b>
-          </span>
+          </button>
         ))}
         {contributions.length === 0 && <small>No completions yet</small>}
       </div>

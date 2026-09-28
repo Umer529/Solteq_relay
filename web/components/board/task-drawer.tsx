@@ -12,6 +12,7 @@ export interface TaskDraft {
   description: string | null;
   priority: TaskPriority;
   assigneeId: string | null;
+  dueDate: string | null;
 }
 
 export function TaskDrawer({
@@ -45,6 +46,7 @@ export function TaskDrawer({
       description: String(formData.get("description") ?? "").trim() || null,
       priority: String(formData.get("priority") ?? "medium") as TaskPriority,
       assigneeId: String(formData.get("assigneeId") ?? "") || null,
+      dueDate: String(formData.get("dueDate") ?? "") || null,
     });
   }
 
@@ -85,6 +87,10 @@ export function TaskDrawer({
                 ))}
               </select>
             </div>
+          </div>
+          <div className="field">
+            <label htmlFor="task-due-date">Due date</label>
+            <input id="task-due-date" name="dueDate" type="date" defaultValue={task?.dueDate ?? ""} />
           </div>
         </fieldset>
         <div className="drawer-actions">

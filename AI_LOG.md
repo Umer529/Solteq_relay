@@ -125,6 +125,9 @@
   ordering, and private ephemeral channels.
 - Added a timed two-minute demo script covering the board, live progress,
   activity, permissions, Presence, typing, chat, and security model.
+- Added `FEATURES.md`, an exhaustive source-verified catalog of routes, visible
+  controls, clicks, keyboard behavior, roles, live synchronization, API routes,
+  validation, database guarantees, security, tooling, and test coverage.
 - Added realistic next steps for end-to-end coverage, CI database checks,
   distributed rate limiting, pagination, position maintenance, observability,
   and accessibility testing.

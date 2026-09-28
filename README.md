@@ -254,6 +254,8 @@ about a second. Confirm online dots and typing appear, chat messages stream, and
 Viewer mutation controls remain disabled.
 
 The concise presentation flow is in [`DEMO.md`](DEMO.md).
+The exhaustive implemented-feature and interaction inventory is in
+[`FEATURES.md`](FEATURES.md).
 
 ## Decisions and tradeoffs
 

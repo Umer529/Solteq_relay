@@ -77,6 +77,7 @@ export function ChatClient({
       projectId,
       userId: currentUserId,
       body: trimmed,
+      editedAt: null,
       createdAt: now,
     };
     setBody("");

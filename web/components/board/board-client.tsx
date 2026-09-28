@@ -48,6 +48,7 @@ export function BoardClient({
   const actor = members.find((member) => member.userId === currentUserId);
   const [selectedTask, setSelectedTask] = useState<Task | null | undefined>();
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [completionFilter, setCompletionFilter] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -67,8 +68,11 @@ export function BoardClient({
   const mayCreate = actor ? can(actor.role, "task.create", { actorId: currentUserId }) : false;
   const mayMove = actor ? can(actor.role, "task.changeStatus", { actorId: currentUserId }) : false;
   const filteredTasks = useMemo(
-    () => tasks.filter((task) => assigneeFilter === "all" || task.assigneeId === assigneeFilter),
-    [assigneeFilter, tasks],
+    () => tasks.filter((task) =>
+      (assigneeFilter === "all" || task.assigneeId === assigneeFilter) &&
+      (!completionFilter || task.completedBy === completionFilter),
+    ),
+    [assigneeFilter, completionFilter, tasks],
   );
 
   useEffect(() => {
@@ -111,6 +115,7 @@ export function BoardClient({
       status: "todo",
       priority: draft.priority,
       assigneeId: draft.assigneeId,
+      dueDate: draft.dueDate,
       createdBy: currentUserId,
       completedBy: null,
       completedAt: null,
@@ -205,7 +210,15 @@ export function BoardClient({
 
   return (
     <div className="board-view">
-      <ProgressSummary members={members} tasks={tasks} />
+      <ProgressSummary
+        members={members}
+        tasks={tasks}
+        selectedCompleterId={completionFilter}
+        onSelectCompleter={(userId) => {
+          setCompletionFilter(userId);
+          if (userId) setAssigneeFilter("all");
+        }}
+      />
       <div className="board-toolbar">
         <div className="connection-state" role="status" aria-live="polite" title={connected ? "Realtime connected" : "Realtime reconnecting"}>
           <span data-connected={connected} />
@@ -214,13 +227,21 @@ export function BoardClient({
         <label className="assignee-filter">
           <ListFilter size={14} strokeWidth={1.7} />
           <span className="sr-only">Filter by assignee</span>
-          <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
+          <select value={assigneeFilter} onChange={(event) => {
+            setAssigneeFilter(event.target.value);
+            setCompletionFilter(null);
+          }}>
             <option value="all">All assignees</option>
             {members.map((member) => (
               <option key={member.userId} value={member.userId}>{member.profile.displayName}</option>
             ))}
           </select>
         </label>
+        {completionFilter && (
+          <button className="active-filter" type="button" onClick={() => setCompletionFilter(null)}>
+            Done by {members.find((member) => member.userId === completionFilter)?.profile.displayName ?? "member"} ×
+          </button>
+        )}
         <button
           className="primary-button compact"
           type="button"

@@ -34,6 +34,8 @@ function sentence(entry: ActivityEntry): string {
     case "member.role_changed":
       return `${actor} changed ${target} from ${payloadText(entry, "from")} to ${payloadText(entry, "to")}`;
     case "message.posted": return `${actor} posted a message`;
+    case "message.updated": return `${actor} edited a message`;
+    case "message.deleted": return `${actor} deleted a message`;
     default: return `${actor} made a project update`;
   }
 }

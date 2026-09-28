@@ -34,6 +34,7 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   assigneeId: string | null;
+  dueDate: string | null;
   createdBy: string;
   completedBy: string | null;
   completedAt: string | null;
@@ -56,6 +57,7 @@ export interface Message {
   projectId: string;
   userId: string;
   body: string;
+  editedAt: string | null;
   createdAt: string;
 }
 

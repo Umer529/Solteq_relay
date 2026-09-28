@@ -29,6 +29,7 @@ function taskFromRow(row: Row): Task {
     status: text(row, "status") as Task["status"],
     priority: text(row, "priority") as Task["priority"],
     assigneeId: nullableText(row, "assignee_id"),
+    dueDate: nullableText(row, "due_date"),
     createdBy: text(row, "created_by"),
     completedBy: nullableText(row, "completed_by"),
     completedAt: nullableText(row, "completed_at"),
@@ -56,6 +57,7 @@ function messageFromRow(row: Row): Message {
     projectId: text(row, "project_id"),
     userId: text(row, "user_id"),
     body: text(row, "body"),
+    editedAt: nullableText(row, "edited_at"),
     createdAt: text(row, "created_at"),
   };
 }
@@ -157,8 +159,14 @@ export function useProjectRealtime(
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `project_id=eq.${projectId}` },
-        (payload) => useProjectStore.getState().upsertMessage(messageFromRow(payload.new as Row)),
+        { event: "*", schema: "public", table: "messages", filter: `project_id=eq.${projectId}` },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            useProjectStore.getState().removeMessage(text(payload.old as Row, "id"));
+          } else {
+            useProjectStore.getState().upsertMessage(messageFromRow(payload.new as Row));
+          }
+        },
       )
       .subscribe((status) => {
         const isConnected = status === "SUBSCRIBED";

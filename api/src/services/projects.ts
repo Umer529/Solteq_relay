@@ -53,7 +53,13 @@ export async function findProfileByEmail(email: string) {
     .ilike("email", email)
     .maybeSingle();
   if (error) throwDatabaseError(error);
-  if (!data) throw new AppError(404, "NOT_FOUND", "No Relay user has that email address.");
+  if (!data) {
+    throw new AppError(
+      404,
+      "NOT_FOUND",
+      "No Relay account was found for this email. Ask them to register at /register, then add them again.",
+    );
+  }
   return data;
 }
 

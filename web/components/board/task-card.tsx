@@ -18,6 +18,9 @@ export function TaskCard({
 }) {
   const sortable = useSortable({ id: task.id, data: { status: task.status }, disabled });
   const assignee = members.find((member) => member.userId === task.assigneeId);
+  const completer = members.find((member) => member.userId === task.completedBy);
+  const overdue = Boolean(task.dueDate && task.status !== "done" && task.dueDate < new Date().toISOString().slice(0, 10));
+  const completedAgo = task.completedAt ? relativeTime(task.completedAt) : null;
   const style = {
     transform: CSS.Transform.toString(sortable.transform),
     transition: sortable.transition,
@@ -30,8 +33,8 @@ export function TaskCard({
       style={style}
     >
       <button className="task-card-body" type="button" onClick={onOpen}>
-        <span className={`priority-mark priority-${task.priority}`} aria-label={`${task.priority} priority`} />
         <strong>{task.title}</strong>
+        {task.description && <span className="task-description-preview">{task.description}</span>}
         <span className="task-card-meta">
           <span className={`priority-label priority-${task.priority}`}>{task.priority}</span>
           {assignee ? (
@@ -46,6 +49,14 @@ export function TaskCard({
             <span className="unassigned">Unassigned</span>
           )}
         </span>
+        {task.status === "done" && completer && completedAgo && (
+          <span className="completion-credit">Done by {completer.profile.displayName} · {completedAgo}</span>
+        )}
+        {task.dueDate && task.status !== "done" && (
+          <span className={`task-due${overdue ? " overdue" : ""}`}>
+            {overdue ? "Overdue" : "Due"} {new Date(`${task.dueDate}T00:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}
+          </span>
+        )}
       </button>
       <button
         className="drag-handle"
@@ -60,4 +71,13 @@ export function TaskCard({
       </button>
     </article>
   );
+}
+
+function relativeTime(value: string): string {
+  const elapsed = Date.now() - new Date(value).getTime();
+  const minutes = Math.max(1, Math.round(elapsed / 60_000));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }

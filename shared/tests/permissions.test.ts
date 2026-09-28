@@ -9,6 +9,7 @@ const baseContext: PermissionContext = {
   currentTargetRole: "member",
   ownerCount: 2,
   task: { createdBy: actorId, assigneeId: null },
+  message: { userId: actorId },
 };
 
 const expected: Record<ProjectRole, Record<Action, boolean>> = {
@@ -24,6 +25,8 @@ const expected: Record<ProjectRole, Record<Action, boolean>> = {
     "task.delete": true,
     "task.changeStatus": true,
     "message.post": true,
+    "message.edit": true,
+    "message.delete": true,
     "project.view": true,
   },
   member: {
@@ -37,6 +40,8 @@ const expected: Record<ProjectRole, Record<Action, boolean>> = {
     "task.delete": true,
     "task.changeStatus": true,
     "message.post": true,
+    "message.edit": true,
+    "message.delete": true,
     "project.view": true,
   },
   viewer: Object.fromEntries(
@@ -71,5 +76,15 @@ describe("can", () => {
     expect(can("owner", "member.changeRole", lastOwner)).toBe(false);
     expect(can("owner", "member.remove", { ...lastOwner, targetRole: "owner" })).toBe(false);
     expect(can("owner", "member.changeRole", { ...lastOwner, ownerCount: 2 })).toBe(true);
+  });
+
+  it("allows authors to edit and moderate roles to delete messages", () => {
+    const anotherMessage = { actorId, message: { userId: "other" } };
+    expect(can("owner", "message.edit", anotherMessage)).toBe(false);
+    expect(can("admin", "message.edit", anotherMessage)).toBe(false);
+    expect(can("member", "message.edit", anotherMessage)).toBe(false);
+    expect(can("owner", "message.delete", anotherMessage)).toBe(true);
+    expect(can("admin", "message.delete", anotherMessage)).toBe(true);
+    expect(can("member", "message.delete", anotherMessage)).toBe(false);
   });
 });
