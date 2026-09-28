@@ -15,6 +15,7 @@ import {
   addMember,
   changeMemberRole,
   createProject,
+  createUserAndProfile,
   deleteProject,
   findProfileByEmail,
   getMembership,
@@ -87,7 +88,19 @@ projectsRouter.post("/:id/members", requireMember, async (request, response) => 
     throw new AppError(403, "FORBIDDEN", "Admins cannot assign the owner role.");
   }
 
-  const profile = await findProfileByEmail(input.email);
+  let profile = await findProfileByEmail(input.email).catch(() => null);
+
+  if (!profile) {
+    if (!input.password || input.password.trim().length < 6) {
+      throw new AppError(
+        400,
+        "BAD_REQUEST",
+        "A password of at least 6 characters is required to create an account for this new member.",
+      );
+    }
+    profile = await createUserAndProfile(input.email, input.password, input.displayName);
+  }
+
   const created = await addMember(projectId, profile.id, input.role, user.id);
   response.status(201).json({ data: created });
 });

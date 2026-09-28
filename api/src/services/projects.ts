@@ -63,6 +63,60 @@ export async function findProfileByEmail(email: string) {
   return data;
 }
 
+export async function createUserAndProfile(
+  email: string,
+  password: string,
+  displayName?: string,
+) {
+  const admin = getSupabaseAdmin();
+  const name = displayName?.trim() || email.split("@")[0];
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      display_name: name,
+    },
+  });
+
+  if (error) {
+    if (error.message.toLowerCase().includes("already registered") || error.status === 422) {
+      return findProfileByEmail(email);
+    }
+    throw new AppError(400, "BAD_REQUEST", error.message);
+  }
+
+  if (!data.user) {
+    throw new AppError(500, "INTERNAL_ERROR", "Failed to create user account.");
+  }
+
+  // Check if profile was created by the database trigger
+  const profile = await admin
+    .from("profiles")
+    .select("id,email,display_name,avatar_color")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (!profile.data) {
+    const palette = ["#54705f", "#6b6859", "#596b78", "#765f58", "#5f6578", "#657052"];
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    const { data: inserted, error: insertError } = await admin
+      .from("profiles")
+      .insert({
+        id: data.user.id,
+        email: data.user.email ?? email,
+        display_name: name,
+        avatar_color: color,
+      })
+      .select("id,email,display_name,avatar_color")
+      .single();
+    if (insertError) throwDatabaseError(insertError);
+    return inserted;
+  }
+
+  return profile.data;
+}
+
 export async function addMember(projectId: string, userId: string, role: ProjectRole, actorId: string) {
   const { data, error } = await getSupabaseAdmin().rpc("add_project_member", {
     p_project_id: projectId,

@@ -57,6 +57,8 @@ export async function inviteMemberAction(projectId: string, formData: FormData):
   try {
     const input = inviteMemberSchema.parse({
       email: value(formData, "email"),
+      password: value(formData, "password") || undefined,
+      displayName: value(formData, "displayName") || undefined,
       role: value(formData, "role"),
     });
 

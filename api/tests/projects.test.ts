@@ -6,6 +6,7 @@ const serviceMocks = vi.hoisted(() => ({
   addMember: vi.fn(),
   changeMemberRole: vi.fn(),
   createProject: vi.fn(),
+  createUserAndProfile: vi.fn(),
   deleteProject: vi.fn(),
   findProfileByEmail: vi.fn(),
   getMembership: vi.fn(),

@@ -1,6 +1,6 @@
 "use server";
 
-import { loginSchema, registerSchema } from "@relay/shared";
+import { loginSchema } from "@relay/shared";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,26 +27,12 @@ export async function loginAction(formData: FormData): Promise<never> {
   redirect("/projects");
 }
 
-export async function registerAction(formData: FormData): Promise<never> {
-  const result = registerSchema.safeParse({
-    displayName: field(formData, "displayName"),
-    email: field(formData, "email"),
-    password: field(formData, "password"),
-  });
-  if (!result.success) {
-    authRedirect("/register", "error", "Check your name, email, and password.");
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email: result.data.email,
-    password: result.data.password,
-    options: { data: { display_name: result.data.displayName } },
-  });
-  if (error) authRedirect("/register", "error", error.message);
-  if (data.session) redirect("/projects");
-
-  authRedirect("/login", "message", "Check your email to confirm your account, then sign in.");
+export async function registerAction(): Promise<never> {
+  authRedirect(
+    "/login",
+    "error",
+    "Public registration is disabled. Accounts are provisioned by project owners and admins.",
+  );
 }
 
 export async function logoutAction(): Promise<never> {

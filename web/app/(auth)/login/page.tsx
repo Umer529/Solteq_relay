@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { loginAction } from "../actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -38,8 +37,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Sign in
         </SubmitButton>
       </form>
-      <p className="auth-switch">
-        New to Relay? <Link href="/register">Create an account</Link>
+      <p className="auth-switch" style={{ color: "var(--muted, #94a3b8)", fontSize: "12px" }}>
+        New accounts are provisioned directly by project owners and admins.
       </p>
     </div>
   );

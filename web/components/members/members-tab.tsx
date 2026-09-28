@@ -53,7 +53,7 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
           <h3 id="invite-heading">Add a teammate</h3>
           <p>
             {mayInvite
-              ? "They must already have a Relay account."
+              ? "Create account with password and add to this project."
               : "Only project owners and admins can invite new members."}
           </p>
         </div>
@@ -64,6 +64,15 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
               name="email"
               type="email"
               placeholder="name@company.com"
+              required
+            />
+            <input
+              aria-label="Initial password"
+              name="password"
+              type="password"
+              placeholder="Initial password (min 6 chars)"
+              minLength={6}
+              autoComplete="new-password"
               required
             />
             <select
