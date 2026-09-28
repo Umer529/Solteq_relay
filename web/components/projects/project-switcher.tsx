@@ -28,7 +28,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectSummary[] }) {
   function choose(projectId: string) {
     dialog.current?.close();
     setQuery("");
-    router.push(`/projects/${projectId}/members`);
+    router.push(`/projects/${projectId}/board`);
   }
 
   return (

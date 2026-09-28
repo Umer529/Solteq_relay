@@ -74,6 +74,24 @@ The script creates a temporary confirmed user, performs protected reads and a
 direct write as that user, asserts the expected RLS behavior, and deletes the
 temporary user.
 
+## M3 database update
+
+If the M1/M2 setup is already installed, run only
+`supabase/migrations/0006_tasks.sql` in the hosted Supabase SQL Editor. Do not
+rerun `setup.sql` against an existing schema; that bundle is intended for a new
+project.
+
+The M3 board uses two channels in parallel: authenticated REST mutations go
+through Express, while committed task and membership rows stream back through
+Supabase Realtime. On every Realtime subscription or reconnection, the browser
+reloads the permission-checked project snapshot before continuing.
+
+For the manual live check, sign in as the seeded Owner in one browser and the
+Viewer in a private browser window. Open the same Board in both, then move a
+requirement as the Owner. The Viewer should see the card, progress count, bar,
+and contribution count update without refreshing. The Viewer controls remain
+read-only.
+
 ## Demo credentials
 
 The seed prints these credentials after each successful run. Every account

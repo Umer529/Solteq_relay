@@ -29,7 +29,7 @@ export async function createProjectAction(formData: FormData): Promise<never> {
   } catch (error) {
     redirect(`/projects?error=${encodeURIComponent(message(error))}`);
   }
-  redirect(`/projects/${projectId}/members`);
+  redirect(`/projects/${projectId}/board`);
 }
 
 export async function inviteMemberAction(projectId: string, formData: FormData): Promise<never> {

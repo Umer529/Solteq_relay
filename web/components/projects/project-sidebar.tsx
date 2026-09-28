@@ -33,7 +33,7 @@ export function ProjectSidebar({
         {projects.map((project) => (
           <Link
             className={project.id === activeProjectId ? "active" : undefined}
-            href={`/projects/${project.id}/members`}
+            href={`/projects/${project.id}/board`}
             key={project.id}
           >
             <span className="project-initial">{project.name.charAt(0).toUpperCase()}</span>

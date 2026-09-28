@@ -46,3 +46,28 @@
   All controls use the shared permission function and explain disabled states.
 - Verified strict typechecking, 12 automated tests, production builds, the
   compiled-web secret scan, and whitespace checks.
+
+## 2026-09-28 — M3 tasks, board, and live progress
+
+- Added shared task schemas and snapshot types plus transactional Postgres
+  functions for creating, editing/assigning, and deleting tasks. Existing
+  status changes remain atomic with their activity event.
+- Added permission-checked task REST routes and the full project snapshot
+  endpoint. Tests cover member creation, viewer denial, and non-member denial
+  across every M3 route.
+- Added a normalized Zustand project store with ID deduplication, optimistic
+  create/edit/move/delete operations, and rollback with error toasts.
+- Added the project Realtime hook for tasks, memberships, activity, and
+  messages. It replaces state from the full snapshot after subscription or
+  reconnection and redirects a user whose membership is deleted.
+- Built the dense three-column requirements board with accessible DnD sensors,
+  fractional positions, task create/edit drawer, assignee and priority fields,
+  assignee filtering, viewer read-only behavior, and the `n` shortcut.
+- Added live derived progress and per-member completion contributions. These
+  recalculate immediately from the Realtime task list.
+- Self-reviewed the board against the forbidden UI list: no gradients,
+  glassmorphism, decorative shapes, colored glow, or oversized rounded cards;
+  shadows are limited to the drawer and actively dragged card.
+- Verified strict typechecking, 15 automated tests, production builds, and the
+  compiled-web secret scan. The live hosted-database check remains manual
+  because no local environment files or project credentials are present.
