@@ -64,6 +64,15 @@ describe("can", () => {
     expect(can("member", "task.delete", { actorId, task: { createdBy: "other", assigneeId: actorId } })).toBe(false);
   });
 
+  it("limits member task moving to owner, admin, or the assignee/creator", () => {
+    expect(can("owner", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: "other" } })).toBe(true);
+    expect(can("admin", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: "other" } })).toBe(true);
+    expect(can("member", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: actorId } })).toBe(true);
+    expect(can("member", "task.changeStatus", { actorId, task: { createdBy: actorId, assigneeId: null } })).toBe(true);
+    expect(can("member", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: "other" } })).toBe(false);
+    expect(can("viewer", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: actorId } })).toBe(false);
+  });
+
   it("prevents admins from touching elevated memberships", () => {
     expect(can("admin", "member.remove", { actorId, targetRole: "admin" })).toBe(false);
     expect(can("admin", "member.remove", { actorId, targetRole: "owner" })).toBe(false);

@@ -15,13 +15,13 @@ export function TaskColumn({
   status,
   tasks,
   members,
-  dragDisabled,
+  canMoveTask,
   onOpenTask,
 }: {
   status: TaskStatus;
   tasks: Task[];
   members: Membership[];
-  dragDisabled: boolean;
+  canMoveTask: (task: Task) => boolean;
   onOpenTask: (task: Task) => void;
 }) {
   const droppable = useDroppable({ id: `column:${status}` });
@@ -37,7 +37,7 @@ export function TaskColumn({
         <div className="task-list">
           {tasks.map((task) => (
             <TaskCard
-              disabled={dragDisabled}
+              disabled={!canMoveTask(task)}
               key={task.id}
               members={members}
               onOpen={() => onOpenTask(task)}

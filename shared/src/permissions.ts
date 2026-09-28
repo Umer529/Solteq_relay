@@ -107,6 +107,13 @@ export function can(
     if (action === "task.delete") {
       return Boolean(ctx?.task && ctx.task.createdBy === ctx.actorId);
     }
+    if (action === "task.changeStatus") {
+      return Boolean(
+        !ctx?.task ||
+          ctx.task.assigneeId === ctx.actorId ||
+          ctx.task.createdBy === ctx.actorId,
+      );
+    }
     return contributorActions.has(action);
   }
 

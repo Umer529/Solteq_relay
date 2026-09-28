@@ -12,7 +12,7 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { can, type ProjectSnapshot, type Task, type TaskStatus } from "@relay/shared";
 import { ListFilter, Plus } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createTask, deleteTask, moveTask, updateTask } from "@/lib/browser-api";
@@ -66,7 +66,16 @@ export function BoardClient({
   }, [linkedTaskId, tasks]);
 
   const mayCreate = actor ? can(actor.role, "task.create", { actorId: currentUserId }) : false;
-  const mayMove = actor ? can(actor.role, "task.changeStatus", { actorId: currentUserId }) : false;
+  const canMoveTask = useCallback(
+    (task: Task) => {
+      if (!actor) return false;
+      return can(actor.role, "task.changeStatus", {
+        actorId: currentUserId,
+        task: { createdBy: task.createdBy, assigneeId: task.assigneeId },
+      });
+    },
+    [actor, currentUserId],
+  );
   const filteredTasks = useMemo(
     () => tasks.filter((task) =>
       (assigneeFilter === "all" || task.assigneeId === assigneeFilter) &&
@@ -153,7 +162,7 @@ export function BoardClient({
   async function onDragEnd(event: DragEndEvent) {
     const taskId = String(event.active.id);
     const previous = tasks.find((task) => task.id === taskId);
-    if (!previous || !event.over || !mayMove) return;
+    if (!previous || !event.over || !canMoveTask(previous)) return;
     const overId = String(event.over.id);
     if (overId === taskId) return;
     const overTask = tasks.find((task) => task.id === overId);
@@ -257,7 +266,7 @@ export function BoardClient({
         <div className="board-columns">
           {statuses.map((status) => (
             <TaskColumn
-              dragDisabled={!mayMove}
+              canMoveTask={canMoveTask}
               key={status}
               members={members}
               onOpenTask={(task) => setSelectedTask(task)}

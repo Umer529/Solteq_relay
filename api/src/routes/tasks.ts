@@ -81,9 +81,14 @@ tasksRouter.patch("/:id/tasks/:taskId/status", requireMember, async (request, re
   const input = changeTaskStatusSchema.parse(request.body);
   const user = actor(request);
   const member = membership(request);
-  await getTask(projectId, taskId);
-  if (!can(member.role, "task.changeStatus", { actorId: user.id })) {
-    throw new AppError(403, "FORBIDDEN", "Viewers cannot move requirements.");
+  const task = await getTask(projectId, taskId);
+  if (
+    !can(member.role, "task.changeStatus", {
+      actorId: user.id,
+      task: { createdBy: task.createdBy, assigneeId: task.assigneeId },
+    })
+  ) {
+    throw new AppError(403, "FORBIDDEN", "Only project owners, admins, or the assignee can move requirements.");
   }
 
   response.json({

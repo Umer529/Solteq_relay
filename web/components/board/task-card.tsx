@@ -77,7 +77,7 @@ export function TaskCard({
         className="drag-handle"
         type="button"
         aria-label={`Move ${task.title}`}
-        title={disabled ? "Viewers cannot move requirements" : "Drag requirement"}
+        title={disabled ? "Only owners, admins, or the assignee can move this requirement" : "Drag requirement"}
         disabled={disabled}
         {...sortable.attributes}
         {...sortable.listeners}

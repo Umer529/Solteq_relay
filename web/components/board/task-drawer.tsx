@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import type { Membership, Task, TaskPriority } from "@relay/shared";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -51,12 +52,19 @@ export function TaskDrawer({
   }, []);
 
   async function submit(formData: FormData) {
+    const today = new Date().toISOString().slice(0, 10);
+    const dueDate = String(formData.get("dueDate") ?? "") || null;
+    if (dueDate && dueDate < today && (!task || task.dueDate !== dueDate)) {
+      toast.error("Due date cannot be in the past. Please select today or a future date.");
+      return;
+    }
+
     await onSave({
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? "").trim() || null,
       priority: String(formData.get("priority") ?? "medium") as TaskPriority,
       assigneeId: String(formData.get("assigneeId") ?? "") || null,
-      dueDate: String(formData.get("dueDate") ?? "") || null,
+      dueDate,
     });
   }
 
@@ -112,7 +120,13 @@ export function TaskDrawer({
           </div>
           <div className="field">
             <label htmlFor="task-due-date">Due date</label>
-            <input id="task-due-date" name="dueDate" type="date" defaultValue={task?.dueDate ?? ""} />
+            <input
+              id="task-due-date"
+              name="dueDate"
+              type="date"
+              defaultValue={task?.dueDate ?? ""}
+              min={new Date().toISOString().slice(0, 10)}
+            />
           </div>
         </fieldset>
         <div className="drawer-actions">
