@@ -1,0 +1,26 @@
+{
+  "name": "relay",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "api",
+    "shared",
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run build -w @relay/shared && concurrently -n api,web -c yellow,green \"npm run dev -w @relay/api\" \"npm run dev -w @relay/web\"",
+    "build": "npm run build -w @relay/shared && npm run build -w @relay/api && npm run build -w @relay/web",
+    "typecheck": "npm run build -w @relay/shared && npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "seed": "npm run seed -w @relay/api",
+    "verify:rls": "npm run verify:rls -w @relay/api",
+    "check:web-secrets": "node scripts/check-web-secrets.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
