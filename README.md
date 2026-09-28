@@ -196,7 +196,7 @@ both the Express routes and the interface.
 | Create task | Yes | Yes | Yes | No |
 | Edit task | Yes | Yes | Creator or assignee | No |
 | Delete task | Yes | Yes | Creator only | No |
-| Change task status | Yes | Yes | Yes | No |
+| Change task status | Yes | Yes | Assignee only | No |
 | Post message | Yes | Yes | Yes | No |
 
 A project must always have at least one Owner. The last Owner cannot be removed,

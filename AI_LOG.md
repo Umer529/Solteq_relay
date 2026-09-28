@@ -133,3 +133,27 @@
   and accessibility testing.
 - Completed final verification with strict typechecking, 19 automated tests,
   production builds, the compiled-web secret scan, and whitespace checks.
+
+## 2026-09-29 — Code review refactor & hardening pass
+
+### What the AI got wrong initially
+- Left 18 `as unknown as` double type casts across API services and data loaders because Supabase JS SDK client queries default to `Record<string, unknown>` when unparameterized.
+- Left orphaned components (`project-realtime-bridge.tsx`) and dead server actions (`inviteMemberAction`, `changeRoleAction`, `removeMemberAction`, `users/actions.ts`) after migrating to toast-based browser client calls.
+- Hardcoded magic numbers (e.g. 50 page limits, 1000 position gaps, 3000ms typing timeouts) scattered across multiple files without a single source of truth.
+- Scattered type declarations rather than deriving TypeScript types directly from Zod schemas (`z.infer`).
+
+### What was corrected by hand / engineering discipline
+- Cleaned up dead files and dead actions with proof of non-reference across the workspace.
+- Centralized constants (`TASK_POSITION_GAP`, `TYPING_TIMEOUT_MS`, `DEFAULT_PAGE_SIZE`, `MAX_ACTIVITY_ENTRIES`) in `@relay/shared/constants.ts`.
+- Established single source of truth in `@relay/shared`: derived `TaskStatus`, `TaskPriority`, and mutation inputs via `z.infer`.
+- Added strong `Database` schema definitions in `api/src/types/database.ts` and created `callRpc<T>` helper to eliminate all 18 `as unknown as` casts down to 0.
+- Re-architected `getProjectSnapshot` cleanly into `api/src/services/projects.ts` adhering to layering boundaries.
+- Added comprehensive characterization tests for `useProjectStore` (optimistic rollback, snapshot loading, activity capping, presence tracking) and task status update permissions, increasing test count from 21 to 29.
+
+### What was verified with scripts
+- `npm run typecheck`: Passed with 0 errors across all workspaces (`shared`, `api`, `web`).
+- `npm run test`: All 29 tests passing across all packages.
+- `npm run build`: Production builds completed cleanly.
+- `npm run check:web-secrets`: 0 backend secrets leaked into web bundle.
+- `npm run verify:rls`: Non-member reads 0 rows, direct writes denied.
+
