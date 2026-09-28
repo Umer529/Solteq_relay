@@ -27,3 +27,22 @@
   verification command is documented in the README.
 - Kept M2 project/member routes and permission logic out of M1 as required by
   the milestone boundary.
+
+## 2026-09-28 — M2 projects, members, and roles
+
+- Installed and pinned Supabase CLI 2.118.0 as a project dependency. Added a
+  direct npm script because the repository path contains an ampersand, which
+  can break Windows `.bin` command resolution.
+- Added `supabase/setup.sql`, generated from all ordered migrations, for a
+  Docker-free hosted Supabase SQL Editor workflow.
+- Implemented the shared `can()` permission function and tests covering every
+  role/action matrix entry, task creator/assignee rules, admin role limits,
+  and last-owner invariants.
+- Added project and membership validation schemas, membership-loading API
+  middleware, permission-aware REST routes, and transactional RPCs for project
+  updates/deletion plus member addition/removal/role changes.
+- Added project creation, project sidebar switching, Cmd/Ctrl+K switcher,
+  empty state, members list, invite form, role controls, removal, and self-leave.
+  All controls use the shared permission function and explain disabled states.
+- Verified strict typechecking, 12 automated tests, production builds, the
+  compiled-web secret scan, and whitespace checks.

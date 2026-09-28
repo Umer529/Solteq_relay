@@ -9,7 +9,7 @@ shell, and deterministic demo data.
 
 - Node.js 20 or newer
 - npm
-- A Supabase project, or the Supabase CLI plus Docker for local development
+- A hosted Supabase project
 
 ## Foundation setup
 
@@ -19,27 +19,31 @@ shell, and deterministic demo data.
    npm install
    ```
 
-2. Copy `web/.env.example` to `web/.env.local` and `api/.env.example` to
+2. Create a hosted Supabase project. No Docker installation is required.
+
+3. In the Supabase dashboard, open **SQL Editor → New query**, paste the full
+   contents of `supabase/setup.sql`, and select **Run**. This file is generated
+   from the ordered migrations with `npm run db:bundle`.
+
+   Alternatively, deploy the migrations with the project-local CLI:
+
+   ```sh
+   npm run supabase -- login
+   npm run supabase -- link --project-ref YOUR_PROJECT_REF
+   npm run supabase -- db push
+   ```
+
+4. Copy `web/.env.example` to `web/.env.local` and `api/.env.example` to
    `api/.env`. Fill them with keys from the same Supabase project. The service
    role key must only be placed in `api/.env`.
 
-3. Apply the migrations with the Supabase CLI:
-
-   ```sh
-   npx supabase link --project-ref YOUR_PROJECT_REF
-   npx supabase db push
-   ```
-
-   For a fully local stack, use `npx supabase start` followed by
-   `npx supabase db reset` and use the printed local keys in both env files.
-
-4. Populate the deterministic demo workspace:
+5. Populate the deterministic demo workspace:
 
    ```sh
    npm run seed
    ```
 
-5. Start the web and API services together:
+6. Start the web and API services together:
 
    ```sh
    npm run dev
