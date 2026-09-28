@@ -7,8 +7,8 @@ const mockSnapshot: ProjectSnapshot = {
     id: "proj-1",
     name: "Alpha Project",
     description: "Alpha description",
+    createdBy: "user-1",
     createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
   },
   members: [
     {
@@ -31,12 +31,26 @@ const mockSnapshot: ProjectSnapshot = {
       title: "Initial Task",
       description: null,
       status: "todo",
+      priority: "medium",
       position: 1000,
       createdBy: "user-1",
       assigneeId: null,
+      completedBy: null,
+      completedAt: null,
       dueDate: null,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+  ],
+  progress: {
+    total: 1,
+    done: 0,
+  },
+  contributions: [
+    {
+      projectId: "proj-1",
+      userId: "user-1",
+      completed: 0,
     },
   ],
   messages: [
@@ -84,9 +98,12 @@ describe("useProjectStore characterization tests", () => {
       title: "Second Task",
       description: null,
       status: "in_progress",
+      priority: "high",
       position: 2000,
       createdBy: "user-1",
       assigneeId: null,
+      completedBy: null,
+      completedAt: null,
       dueDate: null,
       createdAt: "2026-01-01T01:00:00.000Z",
       updatedAt: "2026-01-01T01:00:00.000Z",
@@ -155,7 +172,7 @@ describe("useProjectStore characterization tests", () => {
     const state = useProjectStore.getState();
     expect(state.activity).toHaveLength(50);
     // Most recent is at the beginning
-    expect(state.activity[0].id).toBe("act-60");
+    expect(state.activity[0]?.id).toBe("act-60");
   });
 
   it("handles messages upsert and deletion", () => {
@@ -173,7 +190,7 @@ describe("useProjectStore characterization tests", () => {
 
     store.removeMessage("msg-2");
     expect(useProjectStore.getState().messages).toHaveLength(1);
-    expect(useProjectStore.getState().messages[0].id).toBe("msg-1");
+    expect(useProjectStore.getState().messages[0]?.id).toBe("msg-1");
   });
 
   it("deduplicates onlineUserIds and manages typing users", () => {
