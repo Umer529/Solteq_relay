@@ -6,6 +6,7 @@ import { errorHandler, notFoundHandler } from "./lib/errors.js";
 import { healthRouter } from "./routes/health.js";
 import { projectsRouter } from "./routes/projects.js";
 import { tasksRouter } from "./routes/tasks.js";
+import { messagesRouter } from "./routes/messages.js";
 
 export function createApp() {
   const config = getConfig();
@@ -23,6 +24,7 @@ export function createApp() {
   app.use(express.json({ limit: "32kb" }));
 
   app.use("/health", healthRouter);
+  app.use("/projects", messagesRouter);
   app.use("/projects", tasksRouter);
   app.use("/projects", projectsRouter);
 

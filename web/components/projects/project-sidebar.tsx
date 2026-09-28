@@ -3,6 +3,7 @@ import Link from "next/link";
 import { logoutAction } from "@/app/(auth)/actions";
 import type { ProjectSummary } from "@/lib/data/projects";
 import { ProjectSwitcher } from "./project-switcher";
+import { OnlineMembers } from "@/components/presence/online-members";
 
 export function ProjectSidebar({
   projects,
@@ -44,6 +45,7 @@ export function ProjectSidebar({
           </Link>
         ))}
       </nav>
+      {activeProjectId && <OnlineMembers projectId={activeProjectId} />}
       <form className="sidebar-logout" action={logoutAction}>
         <button type="submit">Sign out</button>
       </form>

@@ -1,4 +1,4 @@
-import type { ProjectSnapshot, Task } from "@relay/shared";
+import type { Message, ProjectSnapshot, Task } from "@relay/shared";
 import { createClient } from "@/lib/supabase/browser";
 
 interface ApiErrorBody {
@@ -60,4 +60,16 @@ export function moveTask(
 
 export function deleteTask(projectId: string, taskId: string): Promise<void> {
   return browserApiRequest(`/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" });
+}
+
+export function postMessage(projectId: string, body: string): Promise<Message> {
+  return browserApiRequest(`/projects/${projectId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+}
+
+export function fetchMessages(projectId: string, before: string, limit = 50): Promise<Message[]> {
+  const query = new URLSearchParams({ before, limit: String(limit) });
+  return browserApiRequest(`/projects/${projectId}/messages?${query.toString()}`);
 }

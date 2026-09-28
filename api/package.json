@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ../node_modules/tsx/dist/cli.mjs watch src/server.ts",
+    "dev": "node ../node_modules/concurrently/dist/bin/concurrently.js -n types,server -c blue,yellow \"npm run dev:types\" \"npm run dev:server\"",
+    "dev:types": "node ../node_modules/typescript/bin/tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "dev:server": "node --watch dist/src/server.js",
     "build": "node ../node_modules/typescript/bin/tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "typecheck": "node ../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",

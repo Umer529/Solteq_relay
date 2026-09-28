@@ -34,13 +34,21 @@ async function verifyRls(): Promise<void> {
     const { error: signInError } = await outsider.auth.signInWithPassword({ email, password });
     if (signInError) throw signInError;
 
-    const [projectsResult, tasksResult, membershipsResult] = await Promise.all([
+    const [projectsResult, tasksResult, membershipsResult, messagesResult, activityResult] = await Promise.all([
       outsider.from("projects").select("id").eq("id", projectId),
       outsider.from("tasks").select("id").eq("project_id", projectId),
       outsider.from("memberships").select("user_id").eq("project_id", projectId),
+      outsider.from("messages").select("id").eq("project_id", projectId),
+      outsider.from("activity_log").select("id").eq("project_id", projectId),
     ]);
 
-    for (const result of [projectsResult, tasksResult, membershipsResult]) {
+    for (const result of [
+      projectsResult,
+      tasksResult,
+      membershipsResult,
+      messagesResult,
+      activityResult,
+    ]) {
       if (result.error) throw result.error;
       if (result.data.length !== 0) {
         throw new Error("RLS failure: a non-member received protected project rows.");

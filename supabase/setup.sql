@@ -861,3 +861,77 @@ grant execute on function public.update_task(uuid, text, text, public.task_prior
   to service_role;
 grant execute on function public.delete_task(uuid, uuid)
   to service_role;
+
+-- -----------------------------------------------------------------------------
+-- 0007_messages.sql
+-- -----------------------------------------------------------------------------
+
+create or replace function public.post_message(
+  p_project_id uuid,
+  p_body text,
+  p_actor_id uuid
+)
+returns public.messages
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  created_message public.messages;
+  actor_name text;
+begin
+  select display_name into actor_name from public.profiles where id = p_actor_id;
+
+  insert into public.messages (project_id, user_id, body)
+  values (p_project_id, p_actor_id, p_body)
+  returning * into created_message;
+
+  insert into public.activity_log (project_id, actor_id, type, payload)
+  values (
+    p_project_id,
+    p_actor_id,
+    'message.posted',
+    jsonb_build_object(
+      'messageId', created_message.id,
+      'actorName', actor_name
+    )
+  );
+
+  return created_message;
+end;
+$$;
+
+revoke all on function public.post_message(uuid, text, uuid)
+  from public, anon, authenticated;
+grant execute on function public.post_message(uuid, text, uuid)
+  to service_role;
+
+-- -----------------------------------------------------------------------------
+-- 0008_realtime_authorization.sql
+-- -----------------------------------------------------------------------------
+
+-- Authorize project-scoped Presence and Broadcast channels. The web client
+-- opts into a private channel, so these policies are evaluated on join.
+create policy "project members can receive project realtime"
+on realtime.messages
+for select
+to authenticated
+using (
+  realtime.messages.extension in ('broadcast', 'presence')
+  and (select realtime.topic()) ~ '^project:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:presence$'
+  and public.is_project_member(
+    split_part((select realtime.topic()), ':', 2)::uuid
+  )
+);
+
+create policy "project members can send project realtime"
+on realtime.messages
+for insert
+to authenticated
+with check (
+  realtime.messages.extension in ('broadcast', 'presence')
+  and (select realtime.topic()) ~ '^project:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:presence$'
+  and public.is_project_member(
+    split_part((select realtime.topic()), ':', 2)::uuid
+  )
+);

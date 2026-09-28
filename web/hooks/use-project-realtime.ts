@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ActivityEntry, Membership, Message, Task } from "@relay/shared";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { fetchProjectSnapshot } from "@/lib/browser-api";
 import { createClient } from "@/lib/supabase/browser";
 import { useProjectStore } from "@/store/project-store";
@@ -59,13 +60,29 @@ function messageFromRow(row: Row): Message {
   };
 }
 
-export function useProjectRealtime(projectId: string, currentUserId: string): void {
+export function useProjectRealtime(
+  projectId: string,
+  currentUserId: string,
+): { sendTyping: (name: string) => void } {
   const router = useRouter();
+  const presenceChannel = useRef<RealtimeChannel | null>(null);
+
+  const sendTyping = useCallback(
+    (name: string) => {
+      void presenceChannel.current?.send({
+        type: "broadcast",
+        event: "typing",
+        payload: { userId: currentUserId, name },
+      });
+    },
+    [currentUserId],
+  );
 
   useEffect(() => {
     const supabase = createClient();
     const store = useProjectStore.getState();
     let cancelled = false;
+    const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
     async function refetch() {
       try {
@@ -104,7 +121,7 @@ export function useProjectRealtime(projectId: string, currentUserId: string): vo
       useProjectStore.getState().upsertMember(member);
     }
 
-    const channel = supabase
+    const dbChannel = supabase
       .channel(`project:${projectId}:db`)
       .on(
         "postgres_changes",
@@ -149,10 +166,53 @@ export function useProjectRealtime(projectId: string, currentUserId: string): vo
         if (isConnected) void refetch();
       });
 
+    const member = useProjectStore.getState().members.find((item) => item.userId === currentUserId);
+    const liveChannel = supabase
+      .channel(`project:${projectId}:presence`, {
+        config: { private: true, presence: { key: currentUserId } },
+      })
+      .on("presence", { event: "sync" }, () => {
+        const state = liveChannel.presenceState() as Record<string, Array<Record<string, unknown>>>;
+        const onlineIds = Object.values(state)
+          .flat()
+          .map((presence) => presence.userId)
+          .filter((userId): userId is string => typeof userId === "string");
+        useProjectStore.getState().setOnlineUserIds(onlineIds);
+      })
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        const row = payload as Row;
+        const userId = text(row, "userId");
+        const name = text(row, "name");
+        if (!userId || userId === currentUserId) return;
+        useProjectStore.getState().setTypingUser({ userId, name });
+        const previousTimer = typingTimers.get(userId);
+        if (previousTimer) clearTimeout(previousTimer);
+        typingTimers.set(
+          userId,
+          setTimeout(() => useProjectStore.getState().removeTypingUser(userId), 3000),
+        );
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED" && member) {
+          void liveChannel.track({
+            userId: currentUserId,
+            name: member.profile.displayName,
+            color: member.profile.avatarColor,
+            lastSeen: new Date().toISOString(),
+          });
+        }
+      });
+    presenceChannel.current = liveChannel;
+
     store.setConnected(false);
     return () => {
       cancelled = true;
-      void supabase.removeChannel(channel);
+      typingTimers.forEach((timer) => clearTimeout(timer));
+      presenceChannel.current = null;
+      void supabase.removeChannel(dbChannel);
+      void supabase.removeChannel(liveChannel);
     };
   }, [currentUserId, projectId, router]);
+
+  return { sendTyping };
 }

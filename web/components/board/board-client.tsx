@@ -12,7 +12,8 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { can, type ProjectSnapshot, type Task, type TaskStatus } from "@relay/shared";
 import { ListFilter, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createTask, deleteTask, moveTask, updateTask } from "@/lib/browser-api";
 import { useProjectRealtime } from "@/hooks/use-project-realtime";
@@ -31,6 +32,9 @@ export function BoardClient({
   currentUserId: string;
 }) {
   const projectId = initialSnapshot.project.id;
+  const searchParams = useSearchParams();
+  const linkedTaskId = searchParams.get("task");
+  const openedLinkedTask = useRef<string | null>(null);
   const storeProjectId = useProjectStore((state) => state.projectId);
   const storedTasks = useProjectStore((state) => state.tasks);
   const storedMembers = useProjectStore((state) => state.members);
@@ -51,6 +55,14 @@ export function BoardClient({
 
   useEffect(() => replaceSnapshot(initialSnapshot), [initialSnapshot, replaceSnapshot]);
   useProjectRealtime(projectId, currentUserId);
+  useEffect(() => {
+    if (!linkedTaskId || openedLinkedTask.current === linkedTaskId) return;
+    const linkedTask = tasks.find((task) => task.id === linkedTaskId);
+    if (linkedTask) {
+      openedLinkedTask.current = linkedTaskId;
+      setSelectedTask(linkedTask);
+    }
+  }, [linkedTaskId, tasks]);
 
   const mayCreate = actor ? can(actor.role, "task.create", { actorId: currentUserId }) : false;
   const mayMove = actor ? can(actor.role, "task.changeStatus", { actorId: currentUserId }) : false;

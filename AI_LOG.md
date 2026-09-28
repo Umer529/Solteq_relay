@@ -71,3 +71,21 @@
 - Verified strict typechecking, 15 automated tests, production builds, and the
   compiled-web secret scan. The live hosted-database check remains manual
   because no local environment files or project credentials are present.
+
+## 2026-09-28 — M4 activity, chat, and presence
+
+- Added a live activity feed with human-readable entries, relative timestamps,
+  user and event filters, and task deep links that open the board drawer.
+- Added paginated project chat, optimistic sends with rollback, grouped author
+  messages, Enter/Shift+Enter behavior, scroll-aware autoscroll, Viewer
+  read-only behavior, and server-side message rate limiting.
+- Added a transactional `post_message` function so each message and its
+  activity entry commit together, plus shared Zod validation and REST tests.
+- Added Presence-backed online indicators to the sidebar and members screen,
+  and throttled Broadcast typing notices that expire after three seconds.
+- Hardened Presence and Broadcast as private channels with policies on
+  `realtime.messages` that check project membership. Postgres row changes
+  continue to rely on the application tables' RLS policies.
+- Extended the non-member RLS verifier to cover messages and activity. Verified
+  strict typechecking, 19 automated tests, the production build, and the web
+  bundle secret scan. The two-browser hosted Realtime check remains manual.

@@ -1,8 +1,11 @@
 import { can, projectRoles, type ProjectRole } from "@relay/shared";
 import { UserPlus, Users } from "lucide-react";
 import { changeRoleAction, inviteMemberAction, removeMemberAction } from "../../actions";
-import { getProjectMembers } from "@/lib/data/projects";
+import type { ProjectSnapshot } from "@relay/shared";
+import { apiRequest } from "@/lib/api";
 import { createClient } from "@/lib/supabase/server";
+import { PresenceDot } from "@/components/presence/presence-dot";
+import { ProjectRealtimeBridge } from "@/components/presence/project-realtime-bridge";
 
 interface MembersPageProps {
   params: Promise<{ id: string }>;
@@ -13,11 +16,12 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   const { id } = await params;
   const notice = await searchParams;
   const supabase = await createClient();
-  const [{ data: { user } }, members] = await Promise.all([
+  const [{ data: { user } }, snapshot] = await Promise.all([
     supabase.auth.getUser(),
-    getProjectMembers(id),
+    apiRequest<ProjectSnapshot>(`/projects/${id}/snapshot`, { method: "GET" }),
   ]);
   if (!user) return null;
+  const members = snapshot.members;
 
   const actorMembership = members.find((member) => member.userId === user.id);
   if (!actorMembership) return null;
@@ -36,6 +40,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
   return (
     <div className="members-view">
+      <ProjectRealtimeBridge currentUserId={user.id} snapshot={snapshot} />
       <div className="content-heading">
         <div>
           <h2>Members</h2>
@@ -120,7 +125,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
             <article className="member-row" key={member.userId}>
               <div className="member-avatar" style={{ backgroundColor: member.profile.avatarColor }}>
                 {member.profile.displayName.charAt(0).toUpperCase()}
-                <span className="presence-dot" title="Offline" />
+                <PresenceDot userId={member.userId} />
               </div>
               <div className="member-identity">
                 <strong>{member.profile.displayName}{isSelf ? " (you)" : ""}</strong>
