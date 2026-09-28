@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { can, type ProjectSnapshot, type Task, type TaskStatus } from "@relay/shared";
+import { TASK_POSITION_GAP, can, type ProjectSnapshot, type Task, type TaskStatus } from "@relay/shared";
 import { ListFilter, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -111,7 +111,7 @@ export function BoardClient({
     }
 
     const now = new Date().toISOString();
-    const position = Math.max(0, ...tasks.filter((task) => task.status === "todo").map((task) => task.position)) + 1000;
+    const position = Math.max(0, ...tasks.filter((task) => task.status === "todo").map((task) => task.position)) + TASK_POSITION_GAP;
     const temporary: Task = {
       id: crypto.randomUUID(),
       projectId,
@@ -170,11 +170,11 @@ export function BoardClient({
     const targetTasks = tasks
       .filter((task) => task.status === targetStatus && task.id !== taskId)
       .sort((left, right) => left.position - right.position);
-    let position = (targetTasks.at(-1)?.position ?? 0) + 1000;
+    let position = (targetTasks.at(-1)?.position ?? 0) + TASK_POSITION_GAP;
     if (overTask && overTask.id !== taskId) {
       const targetIndex = targetTasks.findIndex((task) => task.id === overTask.id);
       const before = targetTasks[targetIndex - 1];
-      position = before ? (before.position + overTask.position) / 2 : overTask.position - 1000;
+      position = before ? (before.position + overTask.position) / 2 : overTask.position - TASK_POSITION_GAP;
     }
     if (previous.status === targetStatus && previous.position === position) return;
 

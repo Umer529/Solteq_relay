@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import type { ActivityEntry, Membership, Message, Task } from "@relay/shared";
+import { TYPING_TIMEOUT_MS, type ActivityEntry, type Membership, type Message, type Task } from "@relay/shared";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/browser";
 import { useProjectStore } from "@/store/project-store";
@@ -204,7 +204,7 @@ export function useProjectRealtime(
         if (previousTimer) clearTimeout(previousTimer);
         typingTimers.set(
           userId,
-          setTimeout(() => useProjectStore.getState().removeTypingUser(userId), 3000),
+          setTimeout(() => useProjectStore.getState().removeTypingUser(userId), TYPING_TIMEOUT_MS),
         );
       })
       .subscribe((status) => {

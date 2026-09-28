@@ -1,9 +1,11 @@
-import type {
-  ActivityEntry,
-  Message,
-  Project,
-  ProjectRole,
-  ProjectSnapshot,
+import {
+  DEFAULT_PAGE_SIZE,
+  MAX_ACTIVITY_ENTRIES,
+  type ActivityEntry,
+  type Message,
+  type Project,
+  type ProjectRole,
+  type ProjectSnapshot,
 } from "@relay/shared";
 import { AppError } from "../lib/errors.js";
 import { getSupabaseAdmin } from "../lib/supabase-admin.js";
@@ -214,13 +216,13 @@ export async function getProjectSnapshot(projectId: string): Promise<ProjectSnap
         .select<string, ActivityDbRow>("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false })
-        .limit(50),
+        .limit(MAX_ACTIVITY_ENTRIES),
       admin
         .from("messages")
         .select<string, MessageDbRow>("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false })
-        .limit(50),
+        .limit(DEFAULT_PAGE_SIZE),
     ]);
 
   const error = [projectResult, membersResult, tasksResult, progressResult, contributionResult, activityResult, messagesResult]
