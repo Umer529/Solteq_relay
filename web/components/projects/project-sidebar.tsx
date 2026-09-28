@@ -1,4 +1,4 @@
-import { Plus, Radio } from "lucide-react";
+import { Plus, Radio, Users } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "@/app/(auth)/actions";
 import type { ProjectSummary } from "@/lib/data/projects";
@@ -10,10 +10,14 @@ import { SubmitButton } from "@/components/ui/submit-button";
 export function ProjectSidebar({
   projects,
   activeProjectId,
+  activePage,
 }: {
   projects: ProjectSummary[];
   activeProjectId?: string;
+  activePage?: string;
 }) {
+  const hasAdminPower = projects.some((p) => p.role === "owner" || p.role === "admin");
+
   return (
     <aside className="workspace-sidebar">
       <div className="sidebar-brand">
@@ -35,8 +39,8 @@ export function ProjectSidebar({
         </div>
         {projects.map((project) => (
           <Link
-            aria-current={project.id === activeProjectId ? "page" : undefined}
-            className={project.id === activeProjectId ? "active" : undefined}
+            aria-current={project.id === activeProjectId && !activePage ? "page" : undefined}
+            className={project.id === activeProjectId && !activePage ? "active" : undefined}
             href={`/projects/${project.id}/board`}
             key={project.id}
           >
@@ -48,6 +52,28 @@ export function ProjectSidebar({
           </Link>
         ))}
       </nav>
+
+      {hasAdminPower && (
+        <div className="sidebar-admin-section">
+          <div className="sidebar-section-label">
+            <span>Administration</span>
+          </div>
+          <Link
+            aria-current={activePage === "users" ? "page" : undefined}
+            className={`sidebar-admin-link ${activePage === "users" ? "active" : ""}`}
+            href="/users"
+          >
+            <span className="sidebar-admin-icon">
+              <Users size={15} strokeWidth={1.8} />
+            </span>
+            <span className="project-link-copy">
+              <strong>Manage Users</strong>
+              <small>Provision & invite</small>
+            </span>
+          </Link>
+        </div>
+      )}
+
       {activeProjectId && <OnlineMembers projectId={activeProjectId} />}
       <div className="sidebar-footer">
         <ThemeToggle />

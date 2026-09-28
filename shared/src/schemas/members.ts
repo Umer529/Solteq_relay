@@ -14,4 +14,12 @@ export const changeMemberRoleSchema = z.object({
   role: projectRoleSchema,
 });
 
+export const createUserSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(6, "Password must be at least 6 characters").max(100),
+  displayName: z.string().min(1, "Display name is required").max(60),
+  projectId: z.string().uuid().optional().or(z.literal("")),
+  role: projectRoleSchema.optional(),
+});
+
 export const userIdSchema = z.string().uuid();

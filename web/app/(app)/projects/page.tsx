@@ -33,6 +33,14 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           </div>
           <SubmitButton className="primary-button" pendingLabel="Creating project…">Create project</SubmitButton>
         </form>
+        {projects.some((p) => p.role === "owner" || p.role === "admin") && (
+          <p style={{ marginTop: "24px", fontSize: "12px", color: "var(--muted)" }}>
+            Need to register new team members?{" "}
+            <a href="/users" style={{ color: "#60a5fa", textDecoration: "none", fontWeight: 550 }}>
+              Open Users & Team Directory &rarr;
+            </a>
+          </p>
+        )}
       </section>
     </main>
   );
