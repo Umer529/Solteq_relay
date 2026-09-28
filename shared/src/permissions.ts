@@ -48,7 +48,6 @@ const elevatedActions = new Set<Action>([
 
 const contributorActions = new Set<Action>([
   "task.create",
-  "task.changeStatus",
   "message.post",
   "project.view",
 ]);
@@ -108,11 +107,7 @@ export function can(
       return Boolean(ctx?.task && ctx.task.createdBy === ctx.actorId);
     }
     if (action === "task.changeStatus") {
-      return Boolean(
-        !ctx?.task ||
-          ctx.task.assigneeId === ctx.actorId ||
-          ctx.task.createdBy === ctx.actorId,
-      );
+      return Boolean(ctx?.task && ctx.task.assigneeId === ctx.actorId);
     }
     return contributorActions.has(action);
   }

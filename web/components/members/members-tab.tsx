@@ -51,36 +51,42 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
         <div className="section-icon" aria-hidden="true"><UserPlus size={17} strokeWidth={1.6} /></div>
         <div className="invite-copy">
           <h3 id="invite-heading">Add a teammate</h3>
-          <p>They must already have a Relay account.</p>
+          <p>
+            {mayInvite
+              ? "They must already have a Relay account."
+              : "Only project owners and admins can invite new members."}
+          </p>
         </div>
-        <form className="invite-form" action={inviteMemberAction.bind(null, projectId)}>
-          <input
-            aria-label="Teammate email"
-            name="email"
-            type="email"
-            placeholder="name@company.com"
-            required
-            disabled={!mayInvite}
-            title={!mayInvite ? "Only owners and admins can add members" : undefined}
-          />
-          <select
-            aria-label="Initial role"
-            name="role"
-            defaultValue="member"
-            disabled={!mayInvite}
-            title={!mayInvite ? "Only owners and admins can choose roles" : undefined}
-          >
-            {inviteRoles.map((role) => <option key={role} value={role}>{role}</option>)}
-          </select>
-          <SubmitButton
-            className="primary-button compact"
-            disabled={!mayInvite}
-            pendingLabel="Adding…"
-            title={!mayInvite ? "Only owners and admins can add members" : undefined}
-          >
-            Add member
-          </SubmitButton>
-        </form>
+        {mayInvite ? (
+          <form className="invite-form" action={inviteMemberAction.bind(null, projectId)}>
+            <input
+              aria-label="Teammate email"
+              name="email"
+              type="email"
+              placeholder="name@company.com"
+              required
+            />
+            <select
+              aria-label="Initial role"
+              name="role"
+              defaultValue="member"
+            >
+              {inviteRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+            </select>
+            <SubmitButton
+              className="primary-button compact"
+              pendingLabel="Adding…"
+            >
+              Add member
+            </SubmitButton>
+          </form>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", padding: "0.5rem 0", color: "var(--foreground-muted, #94a3b8)", fontSize: "0.875rem" }}>
+            <span style={{ padding: "0.35rem 0.85rem", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)" }}>
+              🔒 Owner or Admin role required to add members
+            </span>
+          </div>
+        )}
       </section>
 
       <section className="member-list" aria-labelledby="member-list-heading">

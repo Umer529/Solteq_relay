@@ -12,14 +12,37 @@ export async function browserApiRequest<T>(path: string, init: RequestInit = {})
   } = await supabase.auth.getSession();
   if (!session) throw new Error("Your session has expired. Please sign in again.");
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
-  });
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+  const candidateUrls = Array.from(
+    new Set([
+      configuredUrl,
+      configuredUrl.includes("localhost")
+        ? configuredUrl.replace("localhost", "127.0.0.1")
+        : configuredUrl.replace("127.0.0.1", "localhost"),
+    ]),
+  );
+
+  let response: Response | undefined;
+  for (const baseUrl of candidateUrls) {
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        ...init,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          ...init.headers,
+        },
+      });
+      break;
+    } catch {
+      // Try next candidate
+    }
+  }
+
+  if (!response) {
+    throw new Error("Could not connect to the API server. Please ensure the backend service is running.");
+  }
+
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as ApiErrorBody;
     throw new Error(body.error?.message ?? "The request could not be completed.");

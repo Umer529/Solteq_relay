@@ -80,8 +80,11 @@ projectsRouter.post("/:id/members", requireMember, async (request, response) => 
       currentTargetRole: "viewer",
       targetRole: input.role,
     });
-  if (!mayInvite || !mayGrantRole) {
-    throw new AppError(403, "FORBIDDEN", "You cannot invite a member with that role.");
+  if (!mayInvite) {
+    throw new AppError(403, "FORBIDDEN", "Only project owners and admins can add members.");
+  }
+  if (!mayGrantRole) {
+    throw new AppError(403, "FORBIDDEN", "Admins cannot assign the owner role.");
   }
 
   const profile = await findProfileByEmail(input.email);

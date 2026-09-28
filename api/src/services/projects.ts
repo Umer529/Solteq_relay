@@ -57,7 +57,7 @@ export async function findProfileByEmail(email: string) {
     throw new AppError(
       404,
       "NOT_FOUND",
-      "No Relay account was found for this email. Ask them to register at /register, then add them again.",
+      "This user does not exist. No Relay account was found for this email.",
     );
   }
   return data;
@@ -70,7 +70,12 @@ export async function addMember(projectId: string, userId: string, role: Project
     p_role: role,
     p_actor_id: actorId,
   });
-  if (error) throwDatabaseError(error);
+  if (error) {
+    if (error.code === "23505") {
+      throw new AppError(409, "CONFLICT", "This user is already a member of this project.");
+    }
+    throwDatabaseError(error);
+  }
   return data;
 }
 

@@ -8,7 +8,7 @@ const baseContext: PermissionContext = {
   targetRole: "member",
   currentTargetRole: "member",
   ownerCount: 2,
-  task: { createdBy: actorId, assigneeId: null },
+  task: { createdBy: actorId, assigneeId: actorId },
   message: { userId: actorId },
 };
 
@@ -64,11 +64,12 @@ describe("can", () => {
     expect(can("member", "task.delete", { actorId, task: { createdBy: "other", assigneeId: actorId } })).toBe(false);
   });
 
-  it("limits member task moving to owner, admin, or the assignee/creator", () => {
+  it("limits member task moving to owner, admin, or the assignee only", () => {
     expect(can("owner", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: "other" } })).toBe(true);
     expect(can("admin", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: "other" } })).toBe(true);
     expect(can("member", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: actorId } })).toBe(true);
-    expect(can("member", "task.changeStatus", { actorId, task: { createdBy: actorId, assigneeId: null } })).toBe(true);
+    expect(can("member", "task.changeStatus", { actorId, task: { createdBy: actorId, assigneeId: "other" } })).toBe(false);
+    expect(can("member", "task.changeStatus", { actorId, task: { createdBy: actorId, assigneeId: null } })).toBe(false);
     expect(can("member", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: "other" } })).toBe(false);
     expect(can("viewer", "task.changeStatus", { actorId, task: { createdBy: "other", assigneeId: actorId } })).toBe(false);
   });

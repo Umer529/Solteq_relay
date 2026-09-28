@@ -88,7 +88,7 @@ tasksRouter.patch("/:id/tasks/:taskId/status", requireMember, async (request, re
       task: { createdBy: task.createdBy, assigneeId: task.assigneeId },
     })
   ) {
-    throw new AppError(403, "FORBIDDEN", "Only project owners, admins, or the assignee can move requirements.");
+    throw new AppError(403, "FORBIDDEN", "Only project owners, admins, or the assigned member can update task progress.");
   }
 
   response.json({
