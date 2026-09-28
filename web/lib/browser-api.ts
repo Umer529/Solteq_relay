@@ -135,14 +135,27 @@ export function removeProjectMember(projectId: string, userId: string): Promise<
   });
 }
 
-export function createProvisionedUser<T = any>(input: {
+export interface ProvisionedUser {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarColor: string;
+  createdAt: string;
+  memberships: {
+    projectId: string;
+    projectName: string;
+    role: string;
+  }[];
+}
+
+export function createProvisionedUser<T = ProvisionedUser>(input: {
   email: string;
   password?: string;
   displayName: string;
   projectId?: string;
   role?: string;
 }): Promise<T> {
-  return browserApiRequest(`/users`, {
+  return browserApiRequest<T>(`/users`, {
     method: "POST",
     body: JSON.stringify(input),
   });
