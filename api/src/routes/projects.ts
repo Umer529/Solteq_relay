@@ -102,7 +102,19 @@ projectsRouter.post("/:id/members", requireMember, async (request, response) => 
   }
 
   const created = await addMember(projectId, profile.id, input.role, user.id);
-  response.status(201).json({ data: created });
+  const membershipData = {
+    projectId,
+    userId: profile.id,
+    role: input.role,
+    createdAt: (created as { created_at?: string })?.created_at ?? new Date().toISOString(),
+    profile: {
+      id: profile.id,
+      email: profile.email,
+      displayName: profile.display_name,
+      avatarColor: profile.avatar_color,
+    },
+  };
+  response.status(201).json({ data: membershipData });
 });
 
 projectsRouter.patch("/:id/members/:userId", requireMember, async (request, response) => {

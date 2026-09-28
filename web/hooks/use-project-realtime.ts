@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ActivityEntry, Membership, Message, Task } from "@relay/shared";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { fetchProjectSnapshot } from "@/lib/browser-api";
 import { createClient } from "@/lib/supabase/browser";
 import { useProjectStore } from "@/store/project-store";
 
@@ -85,15 +84,6 @@ export function useProjectRealtime(
     const store = useProjectStore.getState();
     let cancelled = false;
     const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-    async function refetch() {
-      try {
-        const snapshot = await fetchProjectSnapshot(projectId);
-        if (!cancelled) useProjectStore.getState().replaceSnapshot(snapshot);
-      } catch {
-        // A membership deletion can make the snapshot inaccessible before its event arrives.
-      }
-    }
 
     async function upsertMembership(row: Row) {
       const userId = text(row, "user_id");
@@ -176,7 +166,6 @@ export function useProjectRealtime(
       .subscribe((status) => {
         const isConnected = status === "SUBSCRIBED";
         useProjectStore.getState().setConnected(isConnected);
-        if (isConnected) void refetch();
       });
 
     const member = useProjectStore.getState().members.find((item) => item.userId === currentUserId);

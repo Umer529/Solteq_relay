@@ -5,7 +5,7 @@ import { Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fetchMessages, postMessage } from "@/lib/browser-api";
-import { useProjectRealtime } from "@/hooks/use-project-realtime";
+import { useProjectContext } from "@/components/projects/project-provider";
 import { useProjectStore } from "@/store/project-store";
 
 function isGrouped(previous: Message | undefined, current: Message): boolean {
@@ -25,7 +25,6 @@ export function ChatClient({
   const storedMessages = useProjectStore((state) => state.messages);
   const storedMembers = useProjectStore((state) => state.members);
   const typingUsers = useProjectStore((state) => state.typingUsers);
-  const replaceSnapshot = useProjectStore((state) => state.replaceSnapshot);
   const upsertMessage = useProjectStore((state) => state.upsertMessage);
   const removeMessage = useProjectStore((state) => state.removeMessage);
   const messages = useMemo(
@@ -45,8 +44,7 @@ export function ChatClient({
   const pinnedToBottom = useRef(true);
   const lastTypingSent = useRef(0);
 
-  useEffect(() => replaceSnapshot(initialSnapshot), [initialSnapshot, replaceSnapshot]);
-  const { sendTyping } = useProjectRealtime(projectId, currentUserId);
+  const { sendTyping } = useProjectContext();
   useEffect(() => {
     if (pinnedToBottom.current) {
       timeline.current?.scrollTo({ top: timeline.current.scrollHeight, behavior: "smooth" });

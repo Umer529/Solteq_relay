@@ -1,13 +1,25 @@
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { ProjectSnapshot } from "@relay/shared";
 import { useProjectStore } from "@/store/project-store";
+import { useProjectRealtime } from "@/hooks/use-project-realtime";
+import { BoardTab } from "@/components/board/board-tab";
+import { ChatTab } from "@/components/chat/chat-tab";
+import { ActivityTab } from "@/components/activity/activity-tab";
+import { MembersTab } from "@/components/members/members-tab";
+import { ProjectTabs } from "./project-tabs";
+
+export type ProjectTabId = "board" | "chat" | "activity" | "members";
 
 interface ProjectContextValue {
   projectId: string;
   currentUserId: string;
   initialSnapshot: ProjectSnapshot;
+  sendTyping: (name: string) => void;
+  activeTab: ProjectTabId;
+  setActiveTab: (tab: ProjectTabId) => void;
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
@@ -20,18 +32,30 @@ export function useProjectContext(): ProjectContextValue {
   return context;
 }
 
+function resolveTabFromPath(path: string): ProjectTabId {
+  if (path.endsWith("/chat")) return "chat";
+  if (path.endsWith("/activity")) return "activity";
+  if (path.endsWith("/members")) return "members";
+  return "board";
+}
+
 export function ProjectProvider({
   children,
   currentUserId,
   initialSnapshot,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   currentUserId: string;
   initialSnapshot: ProjectSnapshot;
 }) {
   const projectId = initialSnapshot.project.id;
   const replaceSnapshot = useProjectStore((state) => state.replaceSnapshot);
   const storeProjectId = useProjectStore((state) => state.projectId);
+  const pathname = usePathname();
+
+  const [activeTab, setActiveTabState] = useState<ProjectTabId>(() => resolveTabFromPath(pathname));
+
+  const { sendTyping } = useProjectRealtime(projectId, currentUserId);
 
   useEffect(() => {
     if (storeProjectId !== projectId) {
@@ -39,9 +63,50 @@ export function ProjectProvider({
     }
   }, [initialSnapshot, projectId, replaceSnapshot, storeProjectId]);
 
+  useEffect(() => {
+    function onPopState() {
+      const detected = resolveTabFromPath(window.location.pathname);
+      setActiveTabState(detected);
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function setActiveTab(tab: ProjectTabId) {
+    setActiveTabState(tab);
+    const targetUrl = `/projects/${projectId}/${tab}`;
+    if (window.location.pathname !== targetUrl) {
+      window.history.pushState(null, "", targetUrl);
+    }
+  }
+
   return (
-    <ProjectContext.Provider value={{ projectId, currentUserId, initialSnapshot }}>
-      {children}
+    <ProjectContext.Provider
+      value={{
+        projectId,
+        currentUserId,
+        initialSnapshot,
+        sendTyping,
+        activeTab,
+        setActiveTab,
+      }}
+    >
+      <ProjectTabs projectId={projectId} />
+      <div className="project-content">
+        <div style={{ display: activeTab === "board" ? "contents" : "none" }}>
+          <BoardTab />
+        </div>
+        <div style={{ display: activeTab === "chat" ? "contents" : "none" }}>
+          <ChatTab />
+        </div>
+        <div style={{ display: activeTab === "activity" ? "contents" : "none" }}>
+          <ActivityTab />
+        </div>
+        <div style={{ display: activeTab === "members" ? "contents" : "none" }}>
+          <MembersTab />
+        </div>
+      </div>
+      {children && <div style={{ display: "none" }}>{children}</div>}
     </ProjectContext.Provider>
   );
 }

@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Plus, RefreshCw, Search, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
+import { toast } from "sonner";
 import type { ProjectRole } from "@relay/shared";
 import type { ProjectSummary } from "@/lib/data/projects";
-import { SubmitButton } from "@/components/ui/submit-button";
-import { createUserAction } from "./actions";
+import { createProvisionedUser } from "@/lib/browser-api";
 
 export interface UserDirectoryItem {
   id: string;
@@ -29,9 +29,14 @@ export function UserDirectoryClient({
   projects: ProjectSummary[];
   notice?: { error?: string; message?: string };
 }) {
+  const [usersList, setUsersList] = useState<UserDirectoryItem[]>(users);
   const [search, setSearch] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [generatedPassword, setGeneratedPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState<ProjectRole>("member");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const manageableProjects = useMemo(
     () => projects.filter((p) => p.role === "owner" || p.role === "admin"),
@@ -40,14 +45,14 @@ export function UserDirectoryClient({
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
+    if (!q) return usersList;
+    return usersList.filter(
       (u) =>
         u.displayName.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
         u.memberships.some((m) => m.projectName.toLowerCase().includes(q)),
     );
-  }, [search, users]);
+  }, [search, usersList]);
 
   function generatePassword() {
     const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%";
@@ -55,7 +60,43 @@ export function UserDirectoryClient({
     for (let i = 0; i < 12; i++) {
       pwd += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    setGeneratedPassword(pwd);
+    setPassword(pwd);
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    const cleanName = displayName.trim();
+    const cleanEmail = email.trim();
+    const cleanPwd = password.trim();
+    if (!cleanName || !cleanEmail || !cleanPwd) return;
+
+    setIsSubmitting(true);
+    try {
+      const created = await createProvisionedUser<UserDirectoryItem>({
+        displayName: cleanName,
+        email: cleanEmail,
+        password: cleanPwd,
+        projectId: selectedProjectId || undefined,
+        role: selectedProjectId ? selectedRole : undefined,
+      });
+
+      setUsersList((prev) => [created, ...prev]);
+      setDisplayName("");
+      setEmail("");
+      setPassword("");
+      setSelectedProjectId("");
+      setSelectedRole("member");
+
+      toast.success(
+        selectedProjectId
+          ? `User ${created.displayName} registered and assigned to project!`
+          : `User ${created.displayName} registered successfully!`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create user account.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -103,7 +144,7 @@ export function UserDirectoryClient({
             </div>
           </div>
 
-          <form className="provision-form" action={createUserAction}>
+          <form className="provision-form" onSubmit={handleCreateUser}>
             <div className="field">
               <label htmlFor="displayName">Full name</label>
               <input
@@ -113,6 +154,9 @@ export function UserDirectoryClient({
                 placeholder="e.g. Alex Morgan"
                 required
                 maxLength={60}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
 
@@ -124,6 +168,9 @@ export function UserDirectoryClient({
                 type="email"
                 placeholder="alex@company.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
               />
             </div>
 
@@ -135,6 +182,7 @@ export function UserDirectoryClient({
                   className="generate-pwd-btn"
                   onClick={generatePassword}
                   title="Generate a random secure password"
+                  disabled={isSubmitting}
                 >
                   <RefreshCw size={12} />
                   <span>Generate</span>
@@ -148,9 +196,10 @@ export function UserDirectoryClient({
                   placeholder="Min 6 characters"
                   required
                   minLength={6}
-                  value={generatedPassword}
-                  onChange={(e) => setGeneratedPassword(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete="off"
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -163,6 +212,7 @@ export function UserDirectoryClient({
                   name="projectId"
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
+                  disabled={isSubmitting}
                 >
                   <option value="">None (Account only)</option>
                   {manageableProjects.map((project) => (
@@ -176,7 +226,13 @@ export function UserDirectoryClient({
               {selectedProjectId && (
                 <div className="field" style={{ flex: 1 }}>
                   <label htmlFor="role">Initial role</label>
-                  <select id="role" name="role" defaultValue="member">
+                  <select
+                    id="role"
+                    name="role"
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value as ProjectRole)}
+                    disabled={isSubmitting}
+                  >
                     <option value="member">member</option>
                     <option value="admin">admin</option>
                     <option value="viewer">viewer</option>
@@ -186,10 +242,14 @@ export function UserDirectoryClient({
               )}
             </div>
 
-            <SubmitButton className="primary-button" pendingLabel="Creating account…">
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={isSubmitting}
+            >
               <Plus size={15} />
-              <span>Create user account</span>
-            </SubmitButton>
+              <span>{isSubmitting ? "Creating account…" : "Create user account"}</span>
+            </button>
           </form>
         </section>
 

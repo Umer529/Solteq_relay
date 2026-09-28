@@ -1,4 +1,4 @@
-import type { Message, ProjectSnapshot, Task } from "@relay/shared";
+import type { Membership, Message, ProjectSnapshot, Task } from "@relay/shared";
 import { createClient } from "@/lib/supabase/browser";
 
 interface ApiErrorBody {
@@ -106,4 +106,44 @@ export function editMessage(projectId: string, messageId: string, body: string):
 
 export function deleteMessage(projectId: string, messageId: string): Promise<void> {
   return browserApiRequest(`/projects/${projectId}/messages/${messageId}`, { method: "DELETE" });
+}
+
+export function addProjectMember(
+  projectId: string,
+  input: { email: string; password?: string; role: string; displayName?: string },
+): Promise<Membership> {
+  return browserApiRequest(`/projects/${projectId}/members`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function changeProjectMemberRole(
+  projectId: string,
+  userId: string,
+  role: string,
+): Promise<Membership> {
+  return browserApiRequest(`/projects/${projectId}/members/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+}
+
+export function removeProjectMember(projectId: string, userId: string): Promise<void> {
+  return browserApiRequest(`/projects/${projectId}/members/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export function createProvisionedUser<T = any>(input: {
+  email: string;
+  password?: string;
+  displayName: string;
+  projectId?: string;
+  role?: string;
+}): Promise<T> {
+  return browserApiRequest(`/users`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

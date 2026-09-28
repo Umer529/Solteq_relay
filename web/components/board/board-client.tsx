@@ -16,7 +16,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createTask, deleteTask, moveTask, updateTask } from "@/lib/browser-api";
-import { useProjectRealtime } from "@/hooks/use-project-realtime";
 import { useProjectStore } from "@/store/project-store";
 import { ProgressSummary } from "./progress-summary";
 import { TaskColumn } from "./task-column";
@@ -40,7 +39,6 @@ export function BoardClient({
   const storedMembers = useProjectStore((state) => state.members);
   const connected = useProjectStore((state) => state.connected);
   const removed = useProjectStore((state) => state.removed);
-  const replaceSnapshot = useProjectStore((state) => state.replaceSnapshot);
   const upsertTask = useProjectStore((state) => state.upsertTask);
   const removeTask = useProjectStore((state) => state.removeTask);
   const tasks = storeProjectId === projectId ? storedTasks : initialSnapshot.tasks;
@@ -54,8 +52,6 @@ export function BoardClient({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  useEffect(() => replaceSnapshot(initialSnapshot), [initialSnapshot, replaceSnapshot]);
-  useProjectRealtime(projectId, currentUserId);
   useEffect(() => {
     if (!linkedTaskId || openedLinkedTask.current === linkedTaskId) return;
     const linkedTask = tasks.find((task) => task.id === linkedTaskId);

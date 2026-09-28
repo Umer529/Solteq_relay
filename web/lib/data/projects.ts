@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { ProjectRole } from "@relay/shared";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,7 +34,7 @@ interface MemberRow {
   profiles: { id: string; email: string; display_name: string; avatar_color: string } | null;
 }
 
-export async function getMyProjects(): Promise<ProjectSummary[]> {
+export const getMyProjects = cache(async function getMyProjects(): Promise<ProjectSummary[]> {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError) throw authError;
@@ -57,7 +58,7 @@ export async function getMyProjects(): Promise<ProjectSummary[]> {
     });
   }
   return [...projects.values()];
-}
+});
 
 export async function getProjectMembers(projectId: string): Promise<ProjectMember[]> {
   const supabase = await createClient();

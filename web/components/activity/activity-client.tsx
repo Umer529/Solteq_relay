@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ActivityEntry, ProjectSnapshot } from "@relay/shared";
 import { Activity, ListFilter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useProjectRealtime } from "@/hooks/use-project-realtime";
 import { useProjectStore } from "@/store/project-store";
 
 function payloadText(entry: ActivityEntry, key: string): string {
@@ -53,17 +52,15 @@ function relativeTime(value: string, now: number): string {
 
 export function ActivityClient({
   initialSnapshot,
-  currentUserId,
 }: {
   initialSnapshot: ProjectSnapshot;
-  currentUserId: string;
+  currentUserId?: string;
 }) {
   const projectId = initialSnapshot.project.id;
   const storeProjectId = useProjectStore((state) => state.projectId);
   const storedActivity = useProjectStore((state) => state.activity);
   const storedMembers = useProjectStore((state) => state.members);
   const storedTasks = useProjectStore((state) => state.tasks);
-  const replaceSnapshot = useProjectStore((state) => state.replaceSnapshot);
   const activity = storeProjectId === projectId ? storedActivity : initialSnapshot.activity;
   const members = storeProjectId === projectId ? storedMembers : initialSnapshot.members;
   const tasks = storeProjectId === projectId ? storedTasks : initialSnapshot.tasks;
@@ -71,8 +68,6 @@ export function ActivityClient({
   const [typeFilter, setTypeFilter] = useState("all");
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => replaceSnapshot(initialSnapshot), [initialSnapshot, replaceSnapshot]);
-  useProjectRealtime(projectId, currentUserId);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);

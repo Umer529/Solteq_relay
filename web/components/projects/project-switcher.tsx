@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ProjectSummary } from "@/lib/data/projects";
@@ -25,9 +25,27 @@ export function ProjectSwitcher({ projects }: { projects: ProjectSummary[] }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function choose(projectId: string) {
+  function closeDialog() {
     dialog.current?.close();
     setQuery("");
+  }
+
+  function handleBackdropClick(event: React.MouseEvent<HTMLDialogElement>) {
+    const dialogEl = dialog.current;
+    if (!dialogEl) return;
+    const rect = dialogEl.getBoundingClientRect();
+    const isInsideDialog =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInsideDialog || event.target === dialogEl) {
+      closeDialog();
+    }
+  }
+
+  function choose(projectId: string) {
+    closeDialog();
     router.push(`/projects/${projectId}/board`);
   }
 
@@ -38,7 +56,17 @@ export function ProjectSwitcher({ projects }: { projects: ProjectSummary[] }) {
         Switch project
         <kbd>⌘K</kbd>
       </button>
-      <dialog aria-label="Switch project" className="switcher-dialog" ref={dialog} onClose={() => setQuery("")}>
+      <dialog
+        aria-label="Switch project"
+        className="switcher-dialog"
+        ref={dialog}
+        onClick={handleBackdropClick}
+        onCancel={(e) => {
+          e.preventDefault();
+          closeDialog();
+        }}
+        onClose={() => setQuery("")}
+      >
         <div className="switcher-search">
           <Search size={16} strokeWidth={1.7} />
           <input
@@ -48,6 +76,15 @@ export function ProjectSwitcher({ projects }: { projects: ProjectSummary[] }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Find a project…"
           />
+          <button
+            type="button"
+            className="switcher-close-btn"
+            onClick={closeDialog}
+            aria-label="Close search"
+            title="Close (Esc)"
+          >
+            <X size={15} strokeWidth={2} />
+          </button>
         </div>
         <div className="switcher-results">
           {filtered.map((project) => (

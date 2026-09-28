@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { ProjectSidebar } from "@/components/projects/project-sidebar";
-import { ProjectTabs } from "@/components/projects/project-tabs";
 import { getMyProjects } from "@/lib/data/projects";
 import { createClient } from "@/lib/supabase/server";
 import { apiRequest } from "@/lib/api";
@@ -34,8 +33,7 @@ export default async function ProjectLayout({
           projectRole={project.role}
         />
         <ProjectProvider currentUserId={user.id} initialSnapshot={snapshot}>
-          <ProjectTabs projectId={id} />
-          <div className="project-content">{children}</div>
+          {children}
         </ProjectProvider>
       </section>
     </main>

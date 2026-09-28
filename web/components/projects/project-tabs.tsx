@@ -1,35 +1,43 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { LayoutGrid, MessageSquare, Activity, Users } from "lucide-react";
+import { useProjectContext, type ProjectTabId } from "./project-provider";
 
-const tabItems = [
+const tabItems: Array<{
+  id: ProjectTabId;
+  label: string;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+}> = [
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "board", label: "Board", icon: LayoutGrid },
   { id: "activity", label: "Activity", icon: Activity },
   { id: "members", label: "Members", icon: Users },
-] as const;
+];
 
 export function ProjectTabs({ projectId }: { projectId: string }) {
-  const pathname = usePathname();
+  const { activeTab, setActiveTab } = useProjectContext();
 
   return (
     <nav className="project-tabs" aria-label="Project sections">
       {tabItems.map(({ id, label, icon: Icon }) => {
         const href = `/projects/${projectId}/${id}`;
-        const isActive = pathname === href;
+        const isActive = activeTab === id;
         return (
-          <Link
+          <a
             aria-current={isActive ? "page" : undefined}
             className={`project-tab-link${isActive ? " active" : ""}`}
             href={href}
-            prefetch={true}
             key={id}
+            onClick={(e) => {
+              if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+                e.preventDefault();
+                setActiveTab(id);
+              }
+            }}
           >
             <Icon size={14} strokeWidth={isActive ? 2.2 : 1.8} />
             <span>{label}</span>
-          </Link>
+          </a>
         );
       })}
     </nav>

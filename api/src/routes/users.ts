@@ -86,6 +86,8 @@ usersRouter.post("/", async (request, response) => {
 
   const createdProfile = await createUserAndProfile(input.email, input.password, input.displayName);
 
+  let memberships: { projectId: string; projectName: string; role: ProjectRole }[] = [];
+
   if (input.projectId) {
     const admin = getSupabaseAdmin();
     const { data: callerMembership, error } = await admin
@@ -101,7 +103,30 @@ usersRouter.post("/", async (request, response) => {
     }
 
     await addMember(input.projectId, createdProfile.id, input.role ?? "member", caller.id);
+
+    const { data: proj } = await admin
+      .from("projects")
+      .select("name")
+      .eq("id", input.projectId)
+      .maybeSingle();
+
+    memberships = [
+      {
+        projectId: input.projectId,
+        projectName: proj?.name ?? "Assigned Project",
+        role: (input.role as ProjectRole) ?? "member",
+      },
+    ];
   }
 
-  response.status(201).json({ data: createdProfile });
+  response.status(201).json({
+    data: {
+      id: createdProfile.id,
+      email: createdProfile.email,
+      displayName: createdProfile.display_name,
+      avatarColor: createdProfile.avatar_color,
+      createdAt: (createdProfile as { created_at?: string })?.created_at ?? new Date().toISOString(),
+      memberships,
+    },
+  });
 });
