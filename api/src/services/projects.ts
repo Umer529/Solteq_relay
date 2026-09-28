@@ -1,7 +1,23 @@
-import type { ProjectRole } from "@relay/shared";
+import type {
+  ActivityEntry,
+  Message,
+  Project,
+  ProjectRole,
+  ProjectSnapshot,
+} from "@relay/shared";
 import { AppError } from "../lib/errors.js";
 import { getSupabaseAdmin } from "../lib/supabase-admin.js";
 import { throwDatabaseError } from "../lib/database-error.js";
+import type {
+  ActivityDbRow,
+  ContributionDbRow,
+  MemberDbRow,
+  MessageDbRow,
+  ProgressDbRow,
+  ProjectDbRow,
+  TaskDbRow,
+} from "../types/database.js";
+import { mapTask } from "./tasks.js";
 
 interface ProjectInput {
   name: string;
@@ -178,4 +194,96 @@ export async function removeMember(projectId: string, userId: string, actorId: s
     p_actor_id: actorId,
   });
   if (error) throwDatabaseError(error);
+}
+
+export async function getProjectSnapshot(projectId: string): Promise<ProjectSnapshot> {
+  const admin = getSupabaseAdmin();
+  const [projectResult, membersResult, tasksResult, progressResult, contributionResult, activityResult, messagesResult] =
+    await Promise.all([
+      admin.from("projects").select<string, ProjectDbRow>("*").eq("id", projectId).maybeSingle(),
+      admin
+        .from("memberships")
+        .select<string, MemberDbRow>("project_id,user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
+        .eq("project_id", projectId)
+        .order("created_at"),
+      admin.from("tasks").select<string, TaskDbRow>("*").eq("project_id", projectId).order("position"),
+      admin.from("project_progress").select<string, ProgressDbRow>("total,done").eq("project_id", projectId).maybeSingle(),
+      admin.from("member_contributions").select<string, ContributionDbRow>("project_id,user_id,completed").eq("project_id", projectId),
+      admin
+        .from("activity_log")
+        .select<string, ActivityDbRow>("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      admin
+        .from("messages")
+        .select<string, MessageDbRow>("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ]);
+
+  const error = [projectResult, membersResult, tasksResult, progressResult, contributionResult, activityResult, messagesResult]
+    .map((result) => result.error)
+    .find(Boolean);
+  if (error) throwDatabaseError(error);
+  if (!projectResult.data) throw new AppError(404, "NOT_FOUND", "Project not found.");
+
+  const projectRow = projectResult.data;
+  const project: Project = {
+    id: projectRow.id,
+    name: projectRow.name,
+    description: projectRow.description,
+    createdBy: projectRow.created_by,
+    createdAt: projectRow.created_at,
+  };
+  const members = (membersResult.data ?? []).flatMap((row) =>
+    row.profiles
+      ? [
+          {
+            projectId: row.project_id,
+            userId: row.user_id,
+            role: row.role,
+            createdAt: row.created_at,
+            profile: {
+              id: row.profiles.id,
+              email: row.profiles.email,
+              displayName: row.profiles.display_name,
+              avatarColor: row.profiles.avatar_color,
+            },
+          },
+        ]
+      : [],
+  );
+
+  return {
+    project,
+    members,
+    tasks: (tasksResult.data ?? []).map(mapTask),
+    progress: {
+      total: Number(progressResult.data?.total ?? 0),
+      done: Number(progressResult.data?.done ?? 0),
+    },
+    contributions: (contributionResult.data ?? []).map((row) => ({
+      projectId: row.project_id,
+      userId: row.user_id,
+      completed: Number(row.completed),
+    })),
+    activity: (activityResult.data ?? []).map((row): ActivityEntry => ({
+      id: row.id,
+      projectId: row.project_id,
+      actorId: row.actor_id,
+      type: row.type,
+      payload: row.payload,
+      createdAt: row.created_at,
+    })),
+    messages: (messagesResult.data ?? []).slice().reverse().map((row): Message => ({
+      id: row.id,
+      projectId: row.project_id,
+      userId: row.user_id,
+      body: row.body,
+      editedAt: row.edited_at,
+      createdAt: row.created_at,
+    })),
+  };
 }

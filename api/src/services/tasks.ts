@@ -1,33 +1,8 @@
-import type {
-  ActivityEntry,
-  Membership,
-  Message,
-  Project,
-  ProjectSnapshot,
-  Task,
-  TaskPriority,
-  TaskStatus,
-} from "@relay/shared";
+import type { Task, TaskPriority, TaskStatus } from "@relay/shared";
 import { throwDatabaseError } from "../lib/database-error.js";
 import { AppError } from "../lib/errors.js";
-import { getSupabaseAdmin } from "../lib/supabase-admin.js";
-
-interface TaskRow {
-  id: string;
-  project_id: string;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  priority: TaskPriority;
-  assignee_id: string | null;
-  due_date: string | null;
-  created_by: string;
-  completed_by: string | null;
-  completed_at: string | null;
-  position: number;
-  created_at: string;
-  updated_at: string;
-}
+import { callRpc, getSupabaseAdmin } from "../lib/supabase-admin.js";
+import type { TaskDbRow } from "../types/database.js";
 
 interface TaskInput {
   title: string;
@@ -38,15 +13,7 @@ interface TaskInput {
   position: number;
 }
 
-interface MemberRow {
-  project_id: string;
-  user_id: string;
-  role: Membership["role"];
-  created_at: string;
-  profiles: { id: string; email: string; display_name: string; avatar_color: string } | null;
-}
-
-function mapTask(row: TaskRow): Task {
+export function mapTask(row: TaskDbRow): Task {
   return {
     id: row.id,
     projectId: row.project_id,
@@ -68,18 +35,17 @@ function mapTask(row: TaskRow): Task {
 export async function getTask(projectId: string, taskId: string): Promise<Task> {
   const { data, error } = await getSupabaseAdmin()
     .from("tasks")
-    .select("*")
+    .select<string, TaskDbRow>("*")
     .eq("id", taskId)
     .eq("project_id", projectId)
     .maybeSingle();
   if (error) throwDatabaseError(error);
   if (!data) throw new AppError(404, "NOT_FOUND", "Task not found.");
-  return mapTask(data as unknown as TaskRow);
+  return mapTask(data);
 }
 
 export async function createTask(projectId: string, input: TaskInput, actorId: string): Promise<Task> {
-  const admin = getSupabaseAdmin();
-  let result = await admin.rpc("create_task", {
+  let result = await callRpc<TaskDbRow>("create_task", {
     p_project_id: projectId,
     p_title: input.title,
     p_description: input.description ?? null,
@@ -91,7 +57,7 @@ export async function createTask(projectId: string, input: TaskInput, actorId: s
   });
 
   if (result.error && (result.error as { code?: string }).code === "PGRST202") {
-    result = await admin.rpc("create_task", {
+    result = await callRpc<TaskDbRow>("create_task", {
       p_project_id: projectId,
       p_title: input.title,
       p_description: input.description ?? null,
@@ -103,7 +69,8 @@ export async function createTask(projectId: string, input: TaskInput, actorId: s
   }
 
   if (result.error) throwDatabaseError(result.error);
-  return mapTask(result.data as unknown as TaskRow);
+  if (!result.data) throw new AppError(500, "INTERNAL_ERROR", "Failed to create task.");
+  return mapTask(result.data);
 }
 
 export async function updateTask(
@@ -111,8 +78,7 @@ export async function updateTask(
   input: Partial<Omit<TaskInput, "position">>,
   actorId: string,
 ): Promise<Task> {
-  const admin = getSupabaseAdmin();
-  let result = await admin.rpc("update_task", {
+  let result = await callRpc<TaskDbRow>("update_task", {
     p_task_id: current.id,
     p_title: input.title ?? current.title,
     p_description: input.description === undefined ? current.description : input.description,
@@ -123,7 +89,7 @@ export async function updateTask(
   });
 
   if (result.error && (result.error as { code?: string }).code === "PGRST202") {
-    result = await admin.rpc("update_task", {
+    result = await callRpc<TaskDbRow>("update_task", {
       p_task_id: current.id,
       p_title: input.title ?? current.title,
       p_description: input.description === undefined ? current.description : input.description,
@@ -134,7 +100,8 @@ export async function updateTask(
   }
 
   if (result.error) throwDatabaseError(result.error);
-  return mapTask(result.data as unknown as TaskRow);
+  if (!result.data) throw new AppError(500, "INTERNAL_ERROR", "Failed to update task.");
+  return mapTask(result.data);
 }
 
 export async function changeTaskStatus(
@@ -143,14 +110,15 @@ export async function changeTaskStatus(
   position: number,
   actorId: string,
 ): Promise<Task> {
-  const { data, error } = await getSupabaseAdmin().rpc("change_task_status", {
+  const { data, error } = await callRpc<TaskDbRow>("change_task_status", {
     p_task_id: taskId,
     p_status: status,
     p_position: position,
     p_actor_id: actorId,
   });
   if (error) throwDatabaseError(error);
-  return mapTask(data as unknown as TaskRow);
+  if (!data) throw new AppError(500, "INTERNAL_ERROR", "Failed to update task status.");
+  return mapTask(data);
 }
 
 export async function deleteTask(taskId: string, actorId: string): Promise<void> {
@@ -161,88 +129,5 @@ export async function deleteTask(taskId: string, actorId: string): Promise<void>
   if (error) throwDatabaseError(error);
 }
 
-export async function getProjectSnapshot(projectId: string): Promise<ProjectSnapshot> {
-  const admin = getSupabaseAdmin();
-  const [projectResult, membersResult, tasksResult, progressResult, contributionResult, activityResult, messagesResult] =
-    await Promise.all([
-      admin.from("projects").select("*").eq("id", projectId).maybeSingle(),
-      admin
-        .from("memberships")
-        .select("project_id,user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
-        .eq("project_id", projectId)
-        .order("created_at"),
-      admin.from("tasks").select("*").eq("project_id", projectId).order("position"),
-      admin.from("project_progress").select("total,done").eq("project_id", projectId).maybeSingle(),
-      admin.from("member_contributions").select("project_id,user_id,completed").eq("project_id", projectId),
-      admin.from("activity_log").select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50),
-      admin.from("messages").select("*").eq("project_id", projectId).order("created_at", { ascending: false }).limit(50),
-    ]);
+export { getProjectSnapshot } from "./projects.js";
 
-  const error = [projectResult, membersResult, tasksResult, progressResult, contributionResult, activityResult, messagesResult]
-    .map((result) => result.error)
-    .find(Boolean);
-  if (error) throwDatabaseError(error);
-  if (!projectResult.data) throw new AppError(404, "NOT_FOUND", "Project not found.");
-
-  const projectRow = projectResult.data as unknown as {
-    id: string; name: string; description: string | null; created_by: string; created_at: string;
-  };
-  const project: Project = {
-    id: projectRow.id,
-    name: projectRow.name,
-    description: projectRow.description,
-    createdBy: projectRow.created_by,
-    createdAt: projectRow.created_at,
-  };
-  const members = ((membersResult.data ?? []) as unknown as MemberRow[]).flatMap((row) =>
-    row.profiles
-      ? [{
-          projectId: row.project_id,
-          userId: row.user_id,
-          role: row.role,
-          createdAt: row.created_at,
-          profile: {
-            id: row.profiles.id,
-            email: row.profiles.email,
-            displayName: row.profiles.display_name,
-            avatarColor: row.profiles.avatar_color,
-          },
-        }]
-      : [],
-  );
-  const activities = (activityResult.data ?? []) as unknown as Array<{
-    id: string; project_id: string; actor_id: string | null; type: string; payload: Record<string, unknown>; created_at: string;
-  }>;
-  const messages = (messagesResult.data ?? []) as unknown as Array<{
-    id: string; project_id: string; user_id: string; body: string; edited_at: string | null; created_at: string;
-  }>;
-
-  return {
-    project,
-    members,
-    tasks: ((tasksResult.data ?? []) as unknown as TaskRow[]).map(mapTask),
-    progress: {
-      total: Number(progressResult.data?.total ?? 0),
-      done: Number(progressResult.data?.done ?? 0),
-    },
-    contributions: ((contributionResult.data ?? []) as unknown as Array<{
-      project_id: string; user_id: string; completed: number;
-    }>).map((row) => ({ projectId: row.project_id, userId: row.user_id, completed: Number(row.completed) })),
-    activity: activities.map((row): ActivityEntry => ({
-      id: row.id,
-      projectId: row.project_id,
-      actorId: row.actor_id,
-      type: row.type,
-      payload: row.payload,
-      createdAt: row.created_at,
-    })),
-    messages: messages.reverse().map((row): Message => ({
-      id: row.id,
-      projectId: row.project_id,
-      userId: row.user_id,
-      body: row.body,
-      editedAt: row.edited_at,
-      createdAt: row.created_at,
-    })),
-  };
-}

@@ -1,17 +1,9 @@
 import type { Message } from "@relay/shared";
 import { throwDatabaseError } from "../lib/database-error.js";
-import { getSupabaseAdmin } from "../lib/supabase-admin.js";
+import { callRpc, getSupabaseAdmin } from "../lib/supabase-admin.js";
+import type { MessageDbRow } from "../types/database.js";
 
-interface MessageRow {
-  id: string;
-  project_id: string;
-  user_id: string;
-  body: string;
-  edited_at: string | null;
-  created_at: string;
-}
-
-function mapMessage(row: MessageRow): Message {
+function mapMessage(row: MessageDbRow): Message {
   return {
     id: row.id,
     projectId: row.project_id,
@@ -23,13 +15,14 @@ function mapMessage(row: MessageRow): Message {
 }
 
 export async function postMessage(projectId: string, body: string, actorId: string): Promise<Message> {
-  const { data, error } = await getSupabaseAdmin().rpc("post_message", {
+  const { data, error } = await callRpc<MessageDbRow>("post_message", {
     p_project_id: projectId,
     p_body: body,
     p_actor_id: actorId,
   });
   if (error) throwDatabaseError(error);
-  return mapMessage(data as unknown as MessageRow);
+  if (!data) throwDatabaseError({ code: "P0002", message: "Failed to post message." });
+  return mapMessage(data);
 }
 
 export async function getMessages(
@@ -39,7 +32,7 @@ export async function getMessages(
 ): Promise<Message[]> {
   let query = getSupabaseAdmin()
     .from("messages")
-    .select("*")
+    .select<string, MessageDbRow>("*")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -47,29 +40,30 @@ export async function getMessages(
 
   const { data, error } = await query;
   if (error) throwDatabaseError(error);
-  return ((data ?? []) as unknown as MessageRow[]).reverse().map(mapMessage);
+  return (data ?? []).slice().reverse().map(mapMessage);
 }
 
 export async function getMessage(projectId: string, messageId: string): Promise<Message> {
   const { data, error } = await getSupabaseAdmin()
     .from("messages")
-    .select("*")
+    .select<string, MessageDbRow>("*")
     .eq("project_id", projectId)
     .eq("id", messageId)
     .maybeSingle();
   if (error) throwDatabaseError(error);
   if (!data) throwDatabaseError({ code: "P0002", message: "Message not found." });
-  return mapMessage(data as unknown as MessageRow);
+  return mapMessage(data);
 }
 
 export async function updateMessage(messageId: string, body: string, actorId: string): Promise<Message> {
-  const { data, error } = await getSupabaseAdmin().rpc("update_message", {
+  const { data, error } = await callRpc<MessageDbRow>("update_message", {
     p_message_id: messageId,
     p_body: body,
     p_actor_id: actorId,
   });
   if (error) throwDatabaseError(error);
-  return mapMessage(data as unknown as MessageRow);
+  if (!data) throwDatabaseError({ code: "P0002", message: "Failed to update message." });
+  return mapMessage(data);
 }
 
 export async function deleteMessage(messageId: string, actorId: string): Promise<void> {

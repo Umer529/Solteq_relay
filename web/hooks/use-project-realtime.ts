@@ -85,29 +85,38 @@ export function useProjectRealtime(
     let cancelled = false;
     const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+    interface RealtimeMemberRow {
+      project_id: string;
+      user_id: string;
+      role: Membership["role"];
+      created_at: string;
+      profiles: {
+        id: string;
+        email: string;
+        display_name: string;
+        avatar_color: string;
+      } | null;
+    }
+
     async function upsertMembership(row: Row) {
       const userId = text(row, "user_id");
       const { data } = await supabase
         .from("memberships")
-        .select("project_id,user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
+        .select<string, RealtimeMemberRow>("project_id,user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
         .eq("project_id", projectId)
         .eq("user_id", userId)
         .maybeSingle();
-      if (!data || cancelled) return;
-      const profile = data.profiles as unknown as {
-        id: string; email: string; display_name: string; avatar_color: string;
-      } | null;
-      if (!profile) return;
+      if (!data || cancelled || !data.profiles) return;
       const member: Membership = {
         projectId: data.project_id,
         userId: data.user_id,
-        role: data.role as Membership["role"],
+        role: data.role,
         createdAt: data.created_at,
         profile: {
-          id: profile.id,
-          email: profile.email,
-          displayName: profile.display_name,
-          avatarColor: profile.avatar_color,
+          id: data.profiles.id,
+          email: data.profiles.email,
+          displayName: data.profiles.display_name,
+          avatarColor: data.profiles.avatar_color,
         },
       };
       useProjectStore.getState().upsertMember(member);

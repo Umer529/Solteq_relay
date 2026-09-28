@@ -42,13 +42,13 @@ export const getMyProjects = cache(async function getMyProjects(): Promise<Proje
 
   const { data, error } = await supabase
     .from("memberships")
-    .select("project_id,role,projects(id,name,description)")
+    .select<string, ProjectRow>("project_id,role,projects(id,name,description)")
     .eq("user_id", user.id)
     .order("created_at");
   if (error) throw error;
 
   const projects = new Map<string, ProjectSummary>();
-  for (const row of (data ?? []) as unknown as ProjectRow[]) {
+  for (const row of data ?? []) {
     if (!row.projects) continue;
     projects.set(row.projects.id, {
       id: row.projects.id,
@@ -64,12 +64,12 @@ export async function getProjectMembers(projectId: string): Promise<ProjectMembe
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("memberships")
-    .select("user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
+    .select<string, MemberRow>("user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
     .eq("project_id", projectId)
     .order("created_at");
   if (error) throw error;
 
-  return ((data ?? []) as unknown as MemberRow[]).flatMap((row) =>
+  return (data ?? []).flatMap((row) =>
     row.profiles
       ? [
           {

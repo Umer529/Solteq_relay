@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { emailSchema } from "./auth.js";
+import { projectRoles } from "../permissions.js";
 
-export const projectRoleSchema = z.enum(["owner", "admin", "member", "viewer"]);
+export const projectRoleSchema = z.enum(projectRoles);
 
 export const inviteMemberSchema = z.object({
   email: emailSchema,

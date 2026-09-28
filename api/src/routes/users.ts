@@ -39,11 +39,6 @@ usersRouter.get("/", async (_request, response) => {
     .order("created_at", { ascending: false });
   if (pError) throwDatabaseError(pError);
 
-  const { data: memberships, error: mError } = await admin
-    .from("memberships")
-    .select("user_id,role,project_id,projects(id,name)");
-  if (mError) throwDatabaseError(mError);
-
   interface MembershipRow {
     user_id: string;
     role: ProjectRole;
@@ -51,8 +46,13 @@ usersRouter.get("/", async (_request, response) => {
     projects: { id: string; name: string } | null;
   }
 
+  const { data: memberships, error: mError } = await admin
+    .from("memberships")
+    .select<string, MembershipRow>("user_id,role,project_id,projects(id,name)");
+  if (mError) throwDatabaseError(mError);
+
   const membershipMap = new Map<string, { projectId: string; projectName: string; role: ProjectRole }[]>();
-  for (const row of (memberships ?? []) as unknown as MembershipRow[]) {
+  for (const row of memberships ?? []) {
     if (!row.projects) continue;
     const list = membershipMap.get(row.user_id) ?? [];
     list.push({

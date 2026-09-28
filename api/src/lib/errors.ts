@@ -1,13 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
+import type { ErrorCode } from "@relay/shared";
 
-export type ErrorCode =
-  | "BAD_REQUEST"
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "INTERNAL_ERROR";
+export { type ErrorCode };
 
 export class AppError extends Error {
   constructor(
