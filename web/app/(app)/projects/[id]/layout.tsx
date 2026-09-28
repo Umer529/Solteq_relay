@@ -15,7 +15,7 @@ export default async function ProjectLayout({
   return (
     <main className="workspace-shell">
       <ProjectSidebar projects={projects} activeProjectId={id} />
-      <section className="project-workspace">
+      <section className="project-workspace" id="main-content">
         <header className="project-header">
           <div>
             <h1>{project.name}</h1>

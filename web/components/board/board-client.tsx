@@ -207,7 +207,7 @@ export function BoardClient({
     <div className="board-view">
       <ProgressSummary members={members} tasks={tasks} />
       <div className="board-toolbar">
-        <div className="connection-state" title={connected ? "Realtime connected" : "Realtime reconnecting"}>
+        <div className="connection-state" role="status" aria-live="polite" title={connected ? "Realtime connected" : "Realtime reconnecting"}>
           <span data-connected={connected} />
           {connected ? "Live" : "Reconnecting"}
         </div>

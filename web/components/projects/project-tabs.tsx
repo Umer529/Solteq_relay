@@ -13,7 +13,12 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
       {tabs.map((tab) => {
         const href = `/projects/${projectId}/${tab}`;
         return (
-          <Link className={pathname === href ? "active" : undefined} href={href} key={tab}>
+          <Link
+            aria-current={pathname === href ? "page" : undefined}
+            className={pathname === href ? "active" : undefined}
+            href={href}
+            key={tab}
+          >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </Link>
         );

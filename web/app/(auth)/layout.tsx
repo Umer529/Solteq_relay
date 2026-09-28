@@ -1,4 +1,5 @@
 import { Radio } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -19,7 +20,10 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
         </div>
         <p className="auth-context-footer">Built for focused project teams.</p>
       </aside>
-      <section className="auth-form-side">{children}</section>
+      <section className="auth-form-side" id="main-content">
+        <div className="auth-theme"><ThemeToggle compact /></div>
+        {children}
+      </section>
     </main>
   );
 }

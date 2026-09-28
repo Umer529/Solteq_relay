@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { registerAction } from "../actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 interface RegisterPageProps {
   searchParams: Promise<{ error?: string }>;
@@ -45,9 +46,9 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             required
           />
         </div>
-        <button className="primary-button" type="submit">
+        <SubmitButton className="primary-button" pendingLabel="Creating account…">
           Create account
-        </button>
+        </SubmitButton>
       </form>
       <p className="auth-switch">
         Already have an account? <Link href="/login">Sign in</Link>

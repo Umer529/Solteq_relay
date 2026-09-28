@@ -38,7 +38,7 @@ export function ProjectSwitcher({ projects }: { projects: ProjectSummary[] }) {
         Switch project
         <kbd>⌘K</kbd>
       </button>
-      <dialog className="switcher-dialog" ref={dialog} onClose={() => setQuery("")}>
+      <dialog aria-label="Switch project" className="switcher-dialog" ref={dialog} onClose={() => setQuery("")}>
         <div className="switcher-search">
           <Search size={16} strokeWidth={1.7} />
           <input

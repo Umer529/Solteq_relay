@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loginAction } from "../actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 interface LoginPageProps {
   searchParams: Promise<{ error?: string; message?: string }>;
@@ -33,9 +34,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             required
           />
         </div>
-        <button className="primary-button" type="submit">
+        <SubmitButton className="primary-button" pendingLabel="Signing in…">
           Sign in
-        </button>
+        </SubmitButton>
       </form>
       <p className="auth-switch">
         New to Relay? <Link href="/register">Create an account</Link>

@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/api";
 import { createClient } from "@/lib/supabase/server";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { ProjectRealtimeBridge } from "@/components/presence/project-realtime-bridge";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 interface MembersPageProps {
   params: Promise<{ id: string }>;
@@ -79,14 +80,14 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
           >
             {inviteRoles.map((role) => <option key={role} value={role}>{role}</option>)}
           </select>
-          <button
+          <SubmitButton
             className="primary-button compact"
-            type="submit"
             disabled={!mayInvite}
+            pendingLabel="Adding…"
             title={!mayInvite ? "Only owners and admins can add members" : undefined}
           >
             Add member
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -142,19 +143,19 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
                   {!allowedRoles.includes(member.role) && <option value={member.role}>{member.role}</option>}
                   {allowedRoles.map((role: ProjectRole) => <option key={role} value={role}>{role}</option>)}
                 </select>
-                <button type="submit" disabled={!mayChange} title={!mayChange ? roleReason : "Save role"}>
+                <SubmitButton disabled={!mayChange} pendingLabel="Saving…" title={!mayChange ? roleReason : "Save role"}>
                   Save
-                </button>
+                </SubmitButton>
               </form>
               <form action={removeMemberAction.bind(null, id, member.userId)}>
-                <button
+                <SubmitButton
                   className="danger-link"
-                  type="submit"
                   disabled={!mayRemove}
+                  pendingLabel={isSelf ? "Leaving…" : "Removing…"}
                   title={!mayRemove ? (lastOwner ? "The last owner cannot leave" : "You cannot remove this member") : undefined}
                 >
                   {isSelf ? "Leave" : "Remove"}
-                </button>
+                </SubmitButton>
               </form>
             </article>
           );

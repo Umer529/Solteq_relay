@@ -38,6 +38,7 @@ export function ChatClient({
   const actor = members.find((member) => member.userId === currentUserId);
   const mayPost = actor ? can(actor.role, "message.post", { actorId: currentUserId }) : false;
   const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
   const [hasMore, setHasMore] = useState(initialSnapshot.messages.length === 50);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const timeline = useRef<HTMLDivElement>(null);
@@ -69,7 +70,7 @@ export function ChatClient({
 
   async function send() {
     const trimmed = body.trim();
-    if (!trimmed || !mayPost) return;
+    if (!trimmed || !mayPost || sending) return;
     const now = new Date().toISOString();
     const temporary: Message = {
       id: crypto.randomUUID(),
@@ -81,6 +82,7 @@ export function ChatClient({
     setBody("");
     pinnedToBottom.current = true;
     upsertMessage(temporary);
+    setSending(true);
     try {
       const created = await postMessage(projectId, trimmed);
       removeMessage(temporary.id);
@@ -89,6 +91,8 @@ export function ChatClient({
       removeMessage(temporary.id);
       setBody(trimmed);
       toast.error(error instanceof Error ? error.message : "Could not send the message.");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -165,7 +169,7 @@ export function ChatClient({
             }
           }}
           placeholder={mayPost ? "Message this project…" : "Viewers can read chat but cannot post"}
-          disabled={!mayPost}
+          disabled={!mayPost || sending}
           rows={2}
           maxLength={4000}
         />
@@ -173,7 +177,7 @@ export function ChatClient({
           type="button"
           aria-label="Send message"
           title={!mayPost ? "Viewers cannot post messages" : "Send (Enter)"}
-          disabled={!mayPost || !body.trim()}
+          disabled={!mayPost || !body.trim() || sending}
           onClick={() => void send()}
         >
           <Send size={16} strokeWidth={1.7} />

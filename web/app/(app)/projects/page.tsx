@@ -2,6 +2,7 @@ import { FolderPlus } from "lucide-react";
 import { createProjectAction } from "./actions";
 import { ProjectSidebar } from "@/components/projects/project-sidebar";
 import { getMyProjects } from "@/lib/data/projects";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 interface ProjectsPageProps {
   searchParams: Promise<{ error?: string }>;
@@ -14,7 +15,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
   return (
     <main className="workspace-shell">
       <ProjectSidebar projects={projects} />
-      <section className="workspace-empty">
+      <section className="workspace-empty" id="main-content">
         <div className="empty-icon" aria-hidden="true">
           <FolderPlus size={20} strokeWidth={1.6} />
         </div>
@@ -30,7 +31,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
             <label htmlFor="description">Description <span>Optional</span></label>
             <input id="description" name="description" maxLength={2000} placeholder="What is this team delivering?" />
           </div>
-          <button className="primary-button" type="submit">Create project</button>
+          <SubmitButton className="primary-button" pendingLabel="Creating project…">Create project</SubmitButton>
         </form>
       </section>
     </main>

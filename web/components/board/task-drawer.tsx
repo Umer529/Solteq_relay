@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { Membership, Task, TaskPriority } from "@relay/shared";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
 
@@ -48,11 +49,11 @@ export function TaskDrawer({
   }
 
   return (
-    <dialog className="task-drawer" ref={dialog} onCancel={onClose} onClose={onClose}>
+    <dialog aria-labelledby="task-drawer-title" className="task-drawer" ref={dialog} onCancel={onClose} onClose={onClose}>
       <div className="drawer-header">
         <div>
           <span>{task ? "Requirement details" : "New requirement"}</span>
-          <h2>{task ? task.title : "Add to the board"}</h2>
+          <h2 id="task-drawer-title">{task ? task.title : "Add to the board"}</h2>
         </div>
         <button type="button" onClick={onClose} aria-label="Close drawer">
           <X size={17} strokeWidth={1.7} />
@@ -99,7 +100,9 @@ export function TaskDrawer({
             </button>
           )}
           <button className="secondary-button" type="button" onClick={onClose}>Cancel</button>
-          <button className="primary-button compact" type="submit" disabled={!canEdit}>Save requirement</button>
+          <SubmitButton className="primary-button compact" disabled={!canEdit} pendingLabel="Saving…">
+            Save requirement
+          </SubmitButton>
         </div>
       </form>
     </dialog>

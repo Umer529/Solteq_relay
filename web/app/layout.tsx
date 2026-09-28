@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
+import { ThemeToaster } from "@/components/ui/theme-toaster";
 import "./globals.css";
 
 const geist = Geist({
@@ -20,10 +20,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const t=localStorage.getItem("relay-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}}catch{}`,
+          }}
+        />
+      </head>
       <body className={`${geist.variable} ${geistMono.variable}`}>
+        <a className="skip-link" href="#main-content">Skip to main content</a>
         {children}
-        <Toaster position="bottom-right" richColors={false} />
+        <ThemeToaster />
       </body>
     </html>
   );

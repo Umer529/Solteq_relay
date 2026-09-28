@@ -35,17 +35,28 @@ interface MemberRow {
 
 export async function getMyProjects(): Promise<ProjectSummary[]> {
   const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from("memberships")
     .select("project_id,role,projects(id,name,description)")
+    .eq("user_id", user.id)
     .order("created_at");
   if (error) throw error;
 
-  return ((data ?? []) as unknown as ProjectRow[]).flatMap((row) =>
-    row.projects
-      ? [{ id: row.projects.id, name: row.projects.name, description: row.projects.description, role: row.role }]
-      : [],
-  );
+  const projects = new Map<string, ProjectSummary>();
+  for (const row of (data ?? []) as unknown as ProjectRow[]) {
+    if (!row.projects) continue;
+    projects.set(row.projects.id, {
+      id: row.projects.id,
+      name: row.projects.name,
+      description: row.projects.description,
+      role: row.role,
+    });
+  }
+  return [...projects.values()];
 }
 
 export async function getProjectMembers(projectId: string): Promise<ProjectMember[]> {

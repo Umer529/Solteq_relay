@@ -89,3 +89,44 @@
 - Extended the non-member RLS verifier to cover messages and activity. Verified
   strict typechecking, 19 automated tests, the production build, and the web
   bundle secret scan. The two-browser hosted Realtime check remains manual.
+
+## 2026-09-28 — M5 interface polish
+
+- Added a persistent manual light/dark theme control while retaining the system
+  color preference as the default. Toast styling follows the active theme.
+- Added skeleton route loading states and retryable error boundaries for the
+  project area without introducing full-page spinners.
+- Added pending feedback to authentication, project, membership, role, logout,
+  and task forms, and prevented duplicate message submissions while sending.
+- Fixed project navigation duplication by restricting the membership-backed
+  project query to the signed-in user and deduplicating summaries by project ID.
+- Separated Next.js development and production output directories after a
+  concurrent production build invalidated the running development chunk cache.
+- Improved keyboard and assistive-technology behavior with skip navigation,
+  current-page markers, labeled dialogs, live connection status, consistent
+  focus styles, and reduced-motion support.
+- Reviewed the interface at the 768px target and kept narrow board content
+  horizontally scrollable without collapsing the fixed workspace navigation.
+- Rechecked the forbidden visual list: no gradients, glassmorphism, decorative
+  blobs, colored glow, or oversized rounded cards; shadows remain limited to
+  dialogs, the task drawer, and the actively dragged card.
+- Verified strict typechecking, 19 automated tests, the production build, the
+  compiled-web secret scan, and whitespace checks.
+
+## 2026-09-28 — M6 documentation and handoff
+
+- Reorganized the README from milestone notes into a clean-clone guide for the
+  hosted, Docker-free Supabase workflow.
+- Documented the architecture and trust boundaries, environment variables,
+  complete migration order, demo accounts, commands, permission matrix,
+  Realtime event behavior, security checks, and manual verification flow.
+- Recorded the key engineering decisions and tradeoffs, including API-only
+  writes, JWKS verification, transactional RPCs, snapshot recovery, fractional
+  ordering, and private ephemeral channels.
+- Added a timed two-minute demo script covering the board, live progress,
+  activity, permissions, Presence, typing, chat, and security model.
+- Added realistic next steps for end-to-end coverage, CI database checks,
+  distributed rate limiting, pagination, position maintenance, observability,
+  and accessibility testing.
+- Completed final verification with strict typechecking, 19 automated tests,
+  production builds, the compiled-web secret scan, and whitespace checks.

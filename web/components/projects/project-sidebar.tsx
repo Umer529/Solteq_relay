@@ -4,6 +4,8 @@ import { logoutAction } from "@/app/(auth)/actions";
 import type { ProjectSummary } from "@/lib/data/projects";
 import { ProjectSwitcher } from "./project-switcher";
 import { OnlineMembers } from "@/components/presence/online-members";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export function ProjectSidebar({
   projects,
@@ -33,6 +35,7 @@ export function ProjectSidebar({
         </div>
         {projects.map((project) => (
           <Link
+            aria-current={project.id === activeProjectId ? "page" : undefined}
             className={project.id === activeProjectId ? "active" : undefined}
             href={`/projects/${project.id}/board`}
             key={project.id}
@@ -46,9 +49,12 @@ export function ProjectSidebar({
         ))}
       </nav>
       {activeProjectId && <OnlineMembers projectId={activeProjectId} />}
-      <form className="sidebar-logout" action={logoutAction}>
-        <button type="submit">Sign out</button>
-      </form>
+      <div className="sidebar-footer">
+        <ThemeToggle />
+        <form className="sidebar-logout" action={logoutAction}>
+          <SubmitButton pendingLabel="Signing out…">Sign out</SubmitButton>
+        </form>
+      </div>
     </aside>
   );
 }
