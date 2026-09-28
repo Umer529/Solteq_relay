@@ -97,6 +97,46 @@ describe("task routes", () => {
     expect(taskMocks.createTask).not.toHaveBeenCalled();
   });
 
+  it("prevents non-assignee member from changing another user's task status", async () => {
+    taskMocks.getTask.mockResolvedValue({
+      ...task,
+      createdBy: "other-user",
+      assigneeId: "other-user",
+    });
+
+    const response = await request(app)
+      .patch(`/projects/${projectId}/tasks/${taskId}/status`)
+      .set("x-test-role", "member")
+      .send({ status: "done", position: 1000 });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
+    expect(taskMocks.changeTaskStatus).not.toHaveBeenCalled();
+  });
+
+  it("allows assignee member or admin to change task status", async () => {
+    taskMocks.getTask.mockResolvedValue({
+      ...task,
+      createdBy: "other-user",
+      assigneeId: actorId,
+    });
+    taskMocks.changeTaskStatus.mockResolvedValue({ ...task, status: "done" });
+
+    const memberResp = await request(app)
+      .patch(`/projects/${projectId}/tasks/${taskId}/status`)
+      .set("x-test-role", "member")
+      .send({ status: "done", position: 1000 });
+
+    expect(memberResp.status).toBe(200);
+
+    const adminResp = await request(app)
+      .patch(`/projects/${projectId}/tasks/${taskId}/status`)
+      .set("x-test-role", "admin")
+      .send({ status: "done", position: 1000 });
+
+    expect(adminResp.status).toBe(200);
+  });
+
   it("rejects non-members across snapshot and task routes", async () => {
     const responses = await Promise.all([
       request(app).get(`/projects/${projectId}/snapshot`).set("x-test-role", "none"),
@@ -109,3 +149,4 @@ describe("task routes", () => {
     expect(responses.map((response) => response.status)).toEqual([403, 403, 403, 403, 403]);
   });
 });
+
