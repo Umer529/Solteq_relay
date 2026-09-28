@@ -2,29 +2,41 @@ import { redirect } from "next/navigation";
 import { ProjectSidebar } from "@/components/projects/project-sidebar";
 import { ProjectTabs } from "@/components/projects/project-tabs";
 import { getMyProjects } from "@/lib/data/projects";
+import { createClient } from "@/lib/supabase/server";
+import { apiRequest } from "@/lib/api";
+import type { ProjectSnapshot } from "@relay/shared";
+import { ProjectHeaderBar } from "@/components/projects/project-header-bar";
+import { ProjectProvider } from "@/components/projects/project-provider";
 
 export default async function ProjectLayout({
   children,
   params,
 }: Readonly<{ children: React.ReactNode; params: Promise<{ id: string }> }>) {
   const { id } = await params;
-  const projects = await getMyProjects();
+  const supabase = await createClient();
+  const [{ data: { user } }, projects] = await Promise.all([
+    supabase.auth.getUser(),
+    getMyProjects(),
+  ]);
+  if (!user) redirect("/login");
   const project = projects.find((item) => item.id === id);
   if (!project) redirect("/projects");
+
+  const snapshot = await apiRequest<ProjectSnapshot>(`/projects/${id}/snapshot`, { method: "GET" });
 
   return (
     <main className="workspace-shell">
       <ProjectSidebar projects={projects} activeProjectId={id} />
       <section className="project-workspace" id="main-content">
-        <header className="project-header">
-          <div>
-            <h1>{project.name}</h1>
-            <p>{project.description || "No project description"}</p>
-          </div>
-          <span className={`role-badge role-${project.role}`}>{project.role}</span>
-        </header>
-        <ProjectTabs projectId={id} />
-        <div className="project-content">{children}</div>
+        <ProjectHeaderBar
+          projectName={project.name}
+          projectDescription={project.description || "No project description"}
+          projectRole={project.role}
+        />
+        <ProjectProvider currentUserId={user.id} initialSnapshot={snapshot}>
+          <ProjectTabs projectId={id} />
+          <div className="project-content">{children}</div>
+        </ProjectProvider>
       </section>
     </main>
   );

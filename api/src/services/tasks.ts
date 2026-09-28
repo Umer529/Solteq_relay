@@ -78,7 +78,8 @@ export async function getTask(projectId: string, taskId: string): Promise<Task> 
 }
 
 export async function createTask(projectId: string, input: TaskInput, actorId: string): Promise<Task> {
-  const { data, error } = await getSupabaseAdmin().rpc("create_task", {
+  const admin = getSupabaseAdmin();
+  let result = await admin.rpc("create_task", {
     p_project_id: projectId,
     p_title: input.title,
     p_description: input.description ?? null,
@@ -88,8 +89,21 @@ export async function createTask(projectId: string, input: TaskInput, actorId: s
     p_position: input.position,
     p_actor_id: actorId,
   });
-  if (error) throwDatabaseError(error);
-  return mapTask(data as unknown as TaskRow);
+
+  if (result.error && (result.error as { code?: string }).code === "PGRST202") {
+    result = await admin.rpc("create_task", {
+      p_project_id: projectId,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_priority: input.priority,
+      p_assignee_id: input.assigneeId ?? null,
+      p_position: input.position,
+      p_actor_id: actorId,
+    });
+  }
+
+  if (result.error) throwDatabaseError(result.error);
+  return mapTask(result.data as unknown as TaskRow);
 }
 
 export async function updateTask(
@@ -97,7 +111,8 @@ export async function updateTask(
   input: Partial<Omit<TaskInput, "position">>,
   actorId: string,
 ): Promise<Task> {
-  const { data, error } = await getSupabaseAdmin().rpc("update_task", {
+  const admin = getSupabaseAdmin();
+  let result = await admin.rpc("update_task", {
     p_task_id: current.id,
     p_title: input.title ?? current.title,
     p_description: input.description === undefined ? current.description : input.description,
@@ -106,8 +121,20 @@ export async function updateTask(
     p_due_date: input.dueDate === undefined ? current.dueDate : input.dueDate,
     p_actor_id: actorId,
   });
-  if (error) throwDatabaseError(error);
-  return mapTask(data as unknown as TaskRow);
+
+  if (result.error && (result.error as { code?: string }).code === "PGRST202") {
+    result = await admin.rpc("update_task", {
+      p_task_id: current.id,
+      p_title: input.title ?? current.title,
+      p_description: input.description === undefined ? current.description : input.description,
+      p_priority: input.priority ?? current.priority,
+      p_assignee_id: input.assigneeId === undefined ? current.assigneeId : input.assigneeId,
+      p_actor_id: actorId,
+    });
+  }
+
+  if (result.error) throwDatabaseError(result.error);
+  return mapTask(result.data as unknown as TaskRow);
 }
 
 export async function changeTaskStatus(

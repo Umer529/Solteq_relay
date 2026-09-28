@@ -2,24 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LayoutGrid, MessageSquare, Activity, Users } from "lucide-react";
 
-const tabs = ["chat", "board", "activity", "members"] as const;
+const tabItems = [
+  { id: "chat", label: "Chat", icon: MessageSquare },
+  { id: "board", label: "Board", icon: LayoutGrid },
+  { id: "activity", label: "Activity", icon: Activity },
+  { id: "members", label: "Members", icon: Users },
+] as const;
 
 export function ProjectTabs({ projectId }: { projectId: string }) {
   const pathname = usePathname();
 
   return (
     <nav className="project-tabs" aria-label="Project sections">
-      {tabs.map((tab) => {
-        const href = `/projects/${projectId}/${tab}`;
+      {tabItems.map(({ id, label, icon: Icon }) => {
+        const href = `/projects/${projectId}/${id}`;
+        const isActive = pathname === href;
         return (
           <Link
-            aria-current={pathname === href ? "page" : undefined}
-            className={pathname === href ? "active" : undefined}
+            aria-current={isActive ? "page" : undefined}
+            className={`project-tab-link${isActive ? " active" : ""}`}
             href={href}
-            key={tab}
+            prefetch={true}
+            key={id}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <Icon size={14} strokeWidth={isActive ? 2.2 : 1.8} />
+            <span>{label}</span>
           </Link>
         );
       })}

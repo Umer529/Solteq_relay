@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { Calendar, CheckCircle2, GripVertical } from "lucide-react";
 import type { Membership, Task } from "@relay/shared";
 
 export function TaskCard({
@@ -33,29 +33,44 @@ export function TaskCard({
       style={style}
     >
       <button className="task-card-body" type="button" onClick={onOpen}>
-        <strong>{task.title}</strong>
-        {task.description && <span className="task-description-preview">{task.description}</span>}
-        <span className="task-card-meta">
-          <span className={`priority-label priority-${task.priority}`}>{task.priority}</span>
-          {assignee ? (
-            <span
-              className="task-assignee"
-              style={{ backgroundColor: assignee.profile.avatarColor }}
-              title={assignee.profile.displayName}
-            >
-              {assignee.profile.displayName.charAt(0).toUpperCase()}
-            </span>
-          ) : (
-            <span className="unassigned">Unassigned</span>
+        <div className="task-card-main">
+          <strong className="task-card-title">{task.title}</strong>
+          {task.description && (
+            <p className="task-description-preview">{task.description}</p>
           )}
-        </span>
+        </div>
+        <div className="task-card-footer">
+          <div className="task-tags">
+            <span className={`priority-label priority-${task.priority}`}>
+              <span className={`priority-indicator priority-${task.priority}`} />
+              {task.priority}
+            </span>
+            {task.dueDate && task.status !== "done" && (
+              <span className={`task-due${overdue ? " overdue" : ""}`} title={overdue ? "Overdue" : "Due date"}>
+                <Calendar size={11} strokeWidth={2} />
+                {new Date(`${task.dueDate}T00:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}
+              </span>
+            )}
+          </div>
+          <div className="task-assignee-wrap">
+            {assignee ? (
+              <span
+                className="task-assignee"
+                style={{ backgroundColor: assignee.profile.avatarColor }}
+                title={`Assigned to ${assignee.profile.displayName}`}
+              >
+                {assignee.profile.displayName.charAt(0).toUpperCase()}
+              </span>
+            ) : (
+              <span className="unassigned" title="Unassigned">Unassigned</span>
+            )}
+          </div>
+        </div>
         {task.status === "done" && completer && completedAgo && (
-          <span className="completion-credit">Done by {completer.profile.displayName} · {completedAgo}</span>
-        )}
-        {task.dueDate && task.status !== "done" && (
-          <span className={`task-due${overdue ? " overdue" : ""}`}>
-            {overdue ? "Overdue" : "Due"} {new Date(`${task.dueDate}T00:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}
-          </span>
+          <div className="completion-credit">
+            <CheckCircle2 size={11} strokeWidth={2} />
+            <span>Done by {completer.profile.displayName} · {completedAgo}</span>
+          </div>
         )}
       </button>
       <button
@@ -67,7 +82,7 @@ export function TaskCard({
         {...sortable.attributes}
         {...sortable.listeners}
       >
-        <GripVertical size={15} strokeWidth={1.6} />
+        <GripVertical size={14} strokeWidth={1.7} />
       </button>
     </article>
   );

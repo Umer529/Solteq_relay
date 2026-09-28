@@ -36,8 +36,18 @@ export function TaskDrawer({
 
   useEffect(() => {
     const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
+    if (element && !element.open) {
+      try {
+        element.showModal();
+      } catch {
+        // Ignore if already open
+      }
+    }
+    return () => {
+      if (element?.open) {
+        element.close();
+      }
+    };
   }, []);
 
   async function submit(formData: FormData) {
@@ -50,8 +60,20 @@ export function TaskDrawer({
     });
   }
 
+  function handleBackdropClick(event: React.MouseEvent<HTMLDialogElement>) {
+    if (event.target === dialog.current) {
+      onClose();
+    }
+  }
+
   return (
-    <dialog aria-labelledby="task-drawer-title" className="task-drawer" ref={dialog} onCancel={onClose} onClose={onClose}>
+    <dialog
+      aria-labelledby="task-drawer-title"
+      className="task-drawer"
+      ref={dialog}
+      onCancel={onClose}
+      onClick={handleBackdropClick}
+    >
       <div className="drawer-header">
         <div>
           <span>{task ? "Requirement details" : "New requirement"}</span>
@@ -106,8 +128,12 @@ export function TaskDrawer({
             </button>
           )}
           <button className="secondary-button" type="button" onClick={onClose}>Cancel</button>
-          <SubmitButton className="primary-button compact" disabled={!canEdit} pendingLabel="Saving…">
-            Save requirement
+          <SubmitButton
+            className="primary-button compact"
+            disabled={!canEdit}
+            pendingLabel={task ? "Saving…" : "Creating…"}
+          >
+            {task ? "Save changes" : "Create requirement"}
           </SubmitButton>
         </div>
       </form>

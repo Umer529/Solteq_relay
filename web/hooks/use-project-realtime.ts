@@ -123,6 +123,11 @@ export function useProjectRealtime(
       useProjectStore.getState().upsertMember(member);
     }
 
+    const existingDb = supabase.getChannels().find((c) => c.topic === `realtime:project:${projectId}:db`);
+    if (existingDb) {
+      void supabase.removeChannel(existingDb);
+    }
+
     const dbChannel = supabase
       .channel(`project:${projectId}:db`)
       .on(
@@ -175,6 +180,10 @@ export function useProjectRealtime(
       });
 
     const member = useProjectStore.getState().members.find((item) => item.userId === currentUserId);
+    const existingPresence = supabase.getChannels().find((c) => c.topic === `realtime:project:${projectId}:presence`);
+    if (existingPresence) {
+      void supabase.removeChannel(existingPresence);
+    }
     const liveChannel = supabase
       .channel(`project:${projectId}:presence`, {
         config: { private: true, presence: { key: currentUserId } },
