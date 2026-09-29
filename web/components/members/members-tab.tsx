@@ -35,7 +35,6 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
   );
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [role, setRole] = useState<ProjectRole>("member");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [busyUserIds, setBusyUserIds] = useState<Record<string, boolean>>({});
@@ -43,19 +42,16 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
   async function handleAddMember(e: React.FormEvent) {
     e.preventDefault();
     const cleanEmail = email.trim();
-    const cleanPassword = password.trim();
-    if (!cleanEmail || !cleanPassword) return;
+    if (!cleanEmail) return;
 
     setIsSubmitting(true);
     try {
       const added = await addProjectMember(projectId, {
         email: cleanEmail,
-        password: cleanPassword,
         role,
       });
       useProjectStore.getState().upsertMember(added);
       setEmail("");
-      setPassword("");
       setRole("member");
       toast.success(`${added.profile.displayName || added.profile.email} added to project!`);
     } catch (err) {
@@ -128,7 +124,7 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
           <h3 id="invite-heading">Add a teammate</h3>
           <p>
             {mayInvite
-              ? "Create account with password and add to this project."
+              ? "Add a member to this project by email."
               : "Only project owners and admins can invite new members."}
           </p>
         </div>
@@ -142,18 +138,6 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isSubmitting}
-            />
-            <input
-              aria-label="Initial password"
-              name="password"
-              type="password"
-              placeholder="Initial password (min 6 chars)"
-              minLength={6}
-              autoComplete="new-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitting}
             />
             <select

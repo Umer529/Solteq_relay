@@ -6,6 +6,7 @@ import { TYPING_TIMEOUT_MS, type ActivityEntry, type Membership, type Message, t
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/browser";
 import { useProjectStore } from "@/store/project-store";
+import { fetchProjectSnapshot } from "@/lib/browser-api";
 
 type Row = Record<string, unknown>;
 
@@ -85,41 +86,54 @@ export function useProjectRealtime(
     let cancelled = false;
     const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-    interface RealtimeMemberRow {
-      project_id: string;
-      user_id: string;
-      role: Membership["role"];
-      created_at: string;
-      profiles: {
-        id: string;
-        email: string;
-        display_name: string;
-        avatar_color: string;
-      } | null;
-    }
-
     async function upsertMembership(row: Row) {
       const userId = text(row, "user_id");
-      const { data } = await supabase
-        .from("memberships")
-        .select<string, RealtimeMemberRow>("project_id,user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
-        .eq("project_id", projectId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (!data || cancelled || !data.profiles) return;
-      const member: Membership = {
-        projectId: data.project_id,
-        userId: data.user_id,
-        role: data.role,
-        createdAt: data.created_at,
-        profile: {
-          id: data.profiles.id,
-          email: data.profiles.email,
-          displayName: data.profiles.display_name,
-          avatarColor: data.profiles.avatar_color,
-        },
-      };
-      useProjectStore.getState().upsertMember(member);
+      try {
+        const { data } = await supabase
+          .from("memberships")
+          .select("project_id,user_id,role,created_at,profiles(id,email,display_name,avatar_color)")
+          .eq("project_id", projectId)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        let profileObj: { id: string; email: string; display_name: string; avatar_color: string } | null = null;
+        if (data && (data as Record<string, unknown>).profiles) {
+          const raw = (data as Record<string, unknown>).profiles;
+          profileObj = Array.isArray(raw) ? raw[0] : (raw as typeof profileObj);
+        }
+
+        if (!profileObj) {
+          const { data: pData } = await supabase
+            .from("profiles")
+            .select("id,email,display_name,avatar_color")
+            .eq("id", userId)
+            .maybeSingle();
+          if (pData) profileObj = pData;
+        }
+
+        if (profileObj && !cancelled) {
+          const member: Membership = {
+            projectId: ((data as Record<string, unknown>)?.project_id as string) ?? projectId,
+            userId,
+            role: (((data as Record<string, unknown>)?.role as Membership["role"]) ?? text(row, "role") ?? "member") as Membership["role"],
+            createdAt: ((data as Record<string, unknown>)?.created_at as string) ?? new Date().toISOString(),
+            profile: {
+              id: profileObj.id,
+              email: profileObj.email,
+              displayName: profileObj.display_name,
+              avatarColor: profileObj.avatar_color,
+            },
+          };
+          useProjectStore.getState().upsertMember(member);
+        } else if (!cancelled) {
+          const snapshot = await fetchProjectSnapshot(projectId).catch(() => null);
+          if (snapshot?.members && !cancelled) {
+            snapshot.members.forEach((m) => useProjectStore.getState().upsertMember(m));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync membership update:", err);
+      }
     }
 
     const existingDb = supabase.getChannels().find((c) => c.topic === `realtime:project:${projectId}:db`);

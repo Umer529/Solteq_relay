@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { Membership, Task, TaskPriority } from "@relay/shared";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useProjectStore } from "@/store/project-store";
 
 const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
 
@@ -18,7 +19,7 @@ export interface TaskDraft {
 
 export function TaskDrawer({
   task,
-  members,
+  members: propMembers,
   canEdit,
   canDelete,
   onClose,
@@ -33,6 +34,8 @@ export function TaskDrawer({
   onSave: (draft: TaskDraft) => Promise<void>;
   onDelete: (() => Promise<void>) | null;
 }) {
+  const storeMembers = useProjectStore((state) => state.members);
+  const members = storeMembers.length > 0 ? storeMembers : propMembers;
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {

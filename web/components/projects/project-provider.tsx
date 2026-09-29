@@ -11,6 +11,8 @@ import { ActivityTab } from "@/components/activity/activity-tab";
 import { MembersTab } from "@/components/members/members-tab";
 import { ProjectTabs } from "./project-tabs";
 
+import { fetchProjectSnapshot } from "@/lib/browser-api";
+
 export type ProjectTabId = "board" | "chat" | "activity" | "members";
 
 interface ProjectContextValue {
@@ -62,6 +64,21 @@ export function ProjectProvider({
       replaceSnapshot(initialSnapshot);
     }
   }, [initialSnapshot, projectId, replaceSnapshot, storeProjectId]);
+
+  useEffect(() => {
+    if (activeTab === "board") {
+      fetchProjectSnapshot(projectId)
+        .then((snapshot) => {
+          if (snapshot?.members) {
+            snapshot.members.forEach((m) => useProjectStore.getState().upsertMember(m));
+          }
+          if (snapshot?.tasks) {
+            snapshot.tasks.forEach((t) => useProjectStore.getState().upsertTask(t));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [activeTab, projectId]);
 
   useEffect(() => {
     function onPopState() {
