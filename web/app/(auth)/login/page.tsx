@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { loginAction } from "../actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -38,11 +37,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Sign in
         </SubmitButton>
       </form>
-      <p className="auth-switch" style={{ marginTop: "1.25rem", textAlign: "center", fontSize: "13px" }}>
-        Don&apos;t have an account?{" "}
-        <Link href="/register" style={{ color: "var(--accent, #6366f1)", fontWeight: 600, textDecoration: "underline" }}>
-          Create account
-        </Link>
+      <p className="auth-switch" style={{ color: "var(--muted, #94a3b8)", fontSize: "12px", marginTop: "1rem", textAlign: "center" }}>
+        New accounts are provisioned directly by project owners and admins.
       </p>
     </div>
   );

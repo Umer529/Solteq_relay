@@ -27,37 +27,12 @@ export async function loginAction(formData: FormData): Promise<never> {
   redirect("/projects");
 }
 
-export async function registerAction(formData: FormData): Promise<never> {
-  const email = field(formData, "email").trim();
-  const password = field(formData, "password").trim();
-  const displayName = field(formData, "displayName").trim() || email.split("@")[0];
-  const role = field(formData, "role") || "member";
-
-  if (!email || !password || password.length < 6) {
-    authRedirect("/register", "error", "Please provide a valid email and a password of at least 6 characters.");
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        display_name: displayName,
-        initial_role: role,
-      },
-    },
-  });
-
-  if (error) {
-    authRedirect("/register", "error", error.message);
-  }
-
-  if (data?.session) {
-    redirect("/projects");
-  }
-
-  authRedirect("/login", "message", "Account created successfully! Please sign in.");
+export async function registerAction(): Promise<never> {
+  authRedirect(
+    "/login",
+    "error",
+    "Public registration is disabled. Accounts are provisioned by project owners and admins.",
+  );
 }
 
 export async function logoutAction(): Promise<never> {

@@ -84,7 +84,12 @@ usersRouter.post("/", async (request, response) => {
     throw new AppError(409, "CONFLICT", "A user with this email address already exists.");
   }
 
-  const createdProfile = await createUserAndProfile(input.email, input.password, input.displayName);
+  const createdProfile = await createUserAndProfile(
+    input.email,
+    input.password,
+    input.displayName,
+    input.role,
+  );
 
   let memberships: { projectId: string; projectName: string; role: ProjectRole }[] = [];
 

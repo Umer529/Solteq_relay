@@ -1,11 +1,62 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, RefreshCw, Search, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Crown,
+  Eye,
+  FolderKanban,
+  Plus,
+  RefreshCw,
+  Search,
+  Shield,
+  ShieldCheck,
+  User,
+  UserCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { ProjectRole } from "@relay/shared";
 import type { ProjectSummary } from "@/lib/data/projects";
 import { createProvisionedUser } from "@/lib/browser-api";
+
+const ROLE_OPTIONS: Array<{
+  id: ProjectRole;
+  label: string;
+  icon: typeof User;
+  desc: string;
+  color: string;
+}> = [
+  {
+    id: "member",
+    label: "Member",
+    icon: User,
+    desc: "Can create, edit & move requirements on the board",
+    color: "#60a5fa",
+  },
+  {
+    id: "admin",
+    label: "Admin",
+    icon: Shield,
+    desc: "Can invite users, modify roles & project settings",
+    color: "#f59e0b",
+  },
+  {
+    id: "viewer",
+    label: "Viewer",
+    icon: Eye,
+    desc: "Read-only access to board, progress & chat",
+    color: "#94a3b8",
+  },
+  {
+    id: "owner",
+    label: "Owner",
+    icon: Crown,
+    desc: "Full administrative ownership over the project",
+    color: "#a855f7",
+  },
+];
 
 export interface UserDirectoryItem {
   id: string;
@@ -204,9 +255,18 @@ export function UserDirectoryClient({
               </div>
             </div>
 
-            <div className="field-row">
-              <div className="field" style={{ flex: 1.3 }}>
-                <label htmlFor="projectId">Assign to project <span>Optional</span></label>
+            {/* Assign to Project Field */}
+            <div className="field">
+              <label htmlFor="projectId">
+                Assign to project{" "}
+                <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "normal" }}>
+                  (Optional)
+                </span>
+              </label>
+              <div className="project-select-wrapper">
+                <span className="project-select-icon">
+                  <FolderKanban size={15} />
+                </span>
                 <select
                   id="projectId"
                   name="projectId"
@@ -214,32 +274,70 @@ export function UserDirectoryClient({
                   onChange={(e) => setSelectedProjectId(e.target.value)}
                   disabled={isSubmitting}
                 >
-                  <option value="">None (Account only)</option>
+                  <option value="">None (Account only - not assigned to a project)</option>
                   {manageableProjects.map((project) => (
                     <option key={project.id} value={project.id}>
-                      {project.name}
+                      {project.name} ({project.role})
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
 
-              {selectedProjectId && (
-                <div className="field" style={{ flex: 1 }}>
-                  <label htmlFor="role">Initial role</label>
-                  <select
-                    id="role"
-                    name="role"
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as ProjectRole)}
-                    disabled={isSubmitting}
-                  >
-                    <option value="member">member</option>
-                    <option value="admin">admin</option>
-                    <option value="viewer">viewer</option>
-                    <option value="owner">owner</option>
-                  </select>
-                </div>
-              )}
+            {/* Role Selection Field - Always Visible! */}
+            <div className="field">
+              <label>
+                Assigned Role{" "}
+                <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "normal" }}>
+                  {selectedProjectId ? "for selected project" : "default permissions"}
+                </span>
+              </label>
+              <div className="role-selector-grid">
+                {ROLE_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = selectedRole === opt.id;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.id}
+                      className={`role-card-option${isSelected ? " active" : ""}`}
+                      onClick={() => setSelectedRole(opt.id)}
+                      disabled={isSubmitting}
+                    >
+                      <div className="role-card-top">
+                        <div className="role-card-title-group">
+                          <Icon size={14} style={{ color: opt.color }} />
+                          <span className="role-card-name">{opt.label}</span>
+                        </div>
+                        {isSelected && (
+                          <CheckCircle2 size={13} style={{ color: "var(--accent, #6366f1)" }} />
+                        )}
+                      </div>
+                      <p className="role-card-desc">{opt.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Assignment Preview Banner */}
+            <div className="assignment-preview-banner">
+              <CheckCircle2 size={14} style={{ color: "var(--accent, #6366f1)", flexShrink: 0 }} />
+              <span>
+                {selectedProjectId ? (
+                  <>
+                    Will register user and add them to{" "}
+                    <strong>
+                      {manageableProjects.find((p) => p.id === selectedProjectId)?.name || "project"}
+                    </strong>{" "}
+                    as <strong>{selectedRole}</strong>.
+                  </>
+                ) : (
+                  <>
+                    Will register user account with default <strong>{selectedRole}</strong> role (unassigned to any project).
+                  </>
+                )}
+              </span>
             </div>
 
             <button

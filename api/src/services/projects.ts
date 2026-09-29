@@ -85,6 +85,7 @@ export async function createUserAndProfile(
   email: string,
   password: string,
   displayName?: string,
+  role?: string,
 ) {
   const admin = getSupabaseAdmin();
   const name = displayName?.trim() || email.split("@")[0];
@@ -94,6 +95,7 @@ export async function createUserAndProfile(
     email_confirm: true,
     user_metadata: {
       display_name: name,
+      role: role || "member",
     },
   });
 
