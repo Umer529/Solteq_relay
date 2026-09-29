@@ -22,10 +22,12 @@
     "db:bundle": "node scripts/build-supabase-setup.mjs",
     "check:web-secrets": "node scripts/check-web-secrets.mjs"
   },
+  "dependencies": {
+    "typescript": "^5.9.2"
+  },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "supabase": "2.118.0",
-    "typescript": "^5.9.2"
+    "supabase": "2.118.0"
   },
   "engines": {
     "node": ">=20.0.0"
