@@ -10,6 +10,10 @@
   "scripts": {
     "dev": "npm run build -w @relay/shared && npm run build -w @relay/api && node node_modules/concurrently/dist/bin/concurrently.js -n api:types,api,web -c blue,yellow,green \"npm run dev:types -w @relay/api\" \"npm run dev:server -w @relay/api\" \"npm run dev -w @relay/web\"",
     "build": "npm run build -w @relay/shared && npm run build -w @relay/api && npm run build -w @relay/web",
+    "build:web": "npm run build -w @relay/shared && npm run build -w @relay/web",
+    "build:api": "npm run build -w @relay/shared && npm run build -w @relay/api",
+    "start:web": "npm run start -w @relay/web",
+    "start:api": "npm run start -w @relay/api",
     "typecheck": "npm run build -w @relay/shared && npm run typecheck --workspaces --if-present",
     "test": "npm run build -w @relay/shared && npm run test --workspaces --if-present",
     "seed": "npm run seed -w @relay/api",
