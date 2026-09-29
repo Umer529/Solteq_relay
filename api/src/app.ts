@@ -15,9 +15,21 @@ export function createApp() {
 
   app.disable("x-powered-by");
   app.use(helmet());
+  const allowedOrigin = config.WEB_ORIGIN.replace(/\/+$/, "");
   app.use(
     cors({
-      origin: config.WEB_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const cleanOrigin = origin.replace(/\/+$/, "");
+        if (
+          cleanOrigin === allowedOrigin ||
+          cleanOrigin === "http://localhost:3000" ||
+          cleanOrigin.endsWith(".vercel.app")
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, false);
+      },
       methods: ["GET", "POST", "PATCH", "DELETE"],
       allowedHeaders: ["Authorization", "Content-Type"],
     }),

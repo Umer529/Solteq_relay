@@ -28,7 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           }}
         />
       </head>
-      <body className={`${geist.variable} ${geistMono.variable}`}>
+      <body className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
         <a className="skip-link" href="#main-content">Skip to main content</a>
         {children}
         <ThemeToaster />
