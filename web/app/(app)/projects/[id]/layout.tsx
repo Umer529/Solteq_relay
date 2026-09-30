@@ -27,12 +27,17 @@ export default async function ProjectLayout({
     <main className="workspace-shell">
       <ProjectSidebar projects={projects} activeProjectId={id} />
       <section className="project-workspace" id="main-content">
-        <ProjectProvider currentUserId={user.id} initialSnapshot={snapshot}>
-          <ProjectHeaderBar
-            projectName={project.name}
-            projectDescription={project.description || "No project description"}
-            projectRole={project.role}
-          />
+        <ProjectProvider
+          currentUserId={user.id}
+          initialSnapshot={snapshot}
+          header={
+            <ProjectHeaderBar
+              projectName={project.name}
+              projectDescription={project.description || "No project description"}
+              projectRole={project.role}
+            />
+          }
+        >
           {children}
         </ProjectProvider>
       </section>

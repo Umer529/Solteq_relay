@@ -2,6 +2,7 @@
 
 import { LayoutGrid, MessageSquare, Activity, Users } from "lucide-react";
 import { useProjectContext, type ProjectTabId } from "./project-provider";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 const tabItems: Array<{
   id: ProjectTabId;
@@ -15,31 +16,38 @@ const tabItems: Array<{
 ];
 
 export function ProjectTabs({ projectId }: { projectId: string }) {
-  const { activeTab, setActiveTab } = useProjectContext();
+  const { activeTab, setActiveTab, initialSnapshot, currentUserId } = useProjectContext();
+  const currentRole = initialSnapshot.members.find((m) => m.userId === currentUserId)?.role;
 
   return (
     <nav className="project-tabs" aria-label="Project sections">
-      {tabItems.map(({ id, label, icon: Icon }) => {
-        const href = `/projects/${projectId}/${id}`;
-        const isActive = activeTab === id;
-        return (
-          <a
-            aria-current={isActive ? "page" : undefined}
-            className={`project-tab-link${isActive ? " active" : ""}`}
-            href={href}
-            key={id}
-            onClick={(e) => {
-              if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
-                e.preventDefault();
-                setActiveTab(id);
-              }
-            }}
-          >
-            <Icon size={14} strokeWidth={isActive ? 2.2 : 1.8} />
-            <span>{label}</span>
-          </a>
-        );
-      })}
+      <div className="project-tabs-left">
+        {tabItems.map(({ id, label, icon: Icon }) => {
+          const href = `/projects/${projectId}/${id}`;
+          const isActive = activeTab === id;
+          return (
+            <a
+              aria-current={isActive ? "page" : undefined}
+              className={`project-tab-link${isActive ? " active" : ""}`}
+              href={href}
+              key={id}
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+                  e.preventDefault();
+                  setActiveTab(id);
+                }
+              }}
+            >
+              <Icon size={14} strokeWidth={isActive ? 2.2 : 1.8} />
+              <span>{label}</span>
+            </a>
+          );
+        })}
+      </div>
+      <div className="project-tabs-right">
+        <NotificationCenter />
+        {currentRole && <span className={`role-badge role-${currentRole}`}>{currentRole}</span>}
+      </div>
     </nav>
   );
 }

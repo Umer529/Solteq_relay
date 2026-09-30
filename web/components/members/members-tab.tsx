@@ -10,12 +10,18 @@ import { useProjectStore } from "@/store/project-store";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { addProjectMember, changeProjectMemberRole, removeProjectMember } from "@/lib/browser-api";
 import { RoleBoundariesGuide } from "@/components/projects/role-boundaries-guide";
+import { OwnerDeliveryReport } from "@/components/projects/owner-delivery-report";
 
 export function MembersTab({ notice }: { notice?: { error?: string; message?: string } }) {
   const router = useRouter();
   const { projectId, currentUserId, initialSnapshot } = useProjectContext();
   const storeProjectId = useProjectStore((state) => state.projectId);
   const storedMembers = useProjectStore((state) => state.members);
+  const storedTasks = useProjectStore((state) => state.tasks);
+  const tasks =
+    storeProjectId === projectId && storedTasks.length > 0
+      ? storedTasks
+      : initialSnapshot.tasks;
   const members =
     storeProjectId === projectId && storedMembers.length > 0
       ? storedMembers
@@ -284,6 +290,9 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
           );
         })}
       </section>
+      {(actorRole === "owner" || actorRole === "admin") && (
+        <OwnerDeliveryReport tasks={tasks} members={members} />
+      )}
       <RoleBoundariesGuide currentRole={actorRole} />
     </div>
   );

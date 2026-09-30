@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { TASK_POSITION_GAP, can, type ProjectSnapshot, type Task, type TaskStatus } from "@relay/shared";
-import { ListFilter, Plus, ShieldAlert, X } from "lucide-react";
+import { Clock, Crown, ListFilter, Plus, ShieldAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { ProgressSummary } from "./progress-summary";
 import { TaskColumn } from "./task-column";
 import { TaskDrawer, type TaskDraft } from "./task-drawer";
 import { RoleBoundariesGuide } from "@/components/projects/role-boundaries-guide";
+import { OwnerDeliveryReport } from "@/components/projects/owner-delivery-report";
 
 const statuses: TaskStatus[] = ["todo", "in_progress", "done"];
 
@@ -49,6 +50,18 @@ export function BoardClient({
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [completionFilter, setCompletionFilter] = useState<string | null>(null);
   const [showBoundariesModal, setShowBoundariesModal] = useState(false);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+
+  const isOwnerOrAdmin = actor?.role === "owner" || actor?.role === "admin";
+  const lateTaskCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return tasks.filter((t) => {
+      if (!t.dueDate) return false;
+      if (t.status === "done" && t.completedAt && t.completedAt.slice(0, 10) > t.dueDate) return true;
+      if (t.status !== "done" && t.dueDate < today) return true;
+      return false;
+    }).length;
+  }, [tasks]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -249,6 +262,17 @@ export function BoardClient({
             Done by {members.find((member) => member.userId === completionFilter)?.profile.displayName ?? "member"} ×
           </button>
         )}
+        {isOwnerOrAdmin && (
+          <button
+            className={`ghost-button compact owner-late-audit-btn ${lateTaskCount > 0 ? "has-late" : ""}`}
+            type="button"
+            onClick={() => setShowDeliveryModal(true)}
+            title="Owner Delivery Intelligence: inspect late done tasks by member"
+          >
+            <Clock size={14} strokeWidth={1.8} className={lateTaskCount > 0 ? "text-amber" : ""} />
+            <span>Member delivery {lateTaskCount > 0 ? `(${lateTaskCount} late)` : ""}</span>
+          </button>
+        )}
         <button
           className="ghost-button compact role-boundaries-btn"
           type="button"
@@ -324,6 +348,45 @@ export function BoardClient({
             </div>
             <div className="boundaries-modal-content">
               <RoleBoundariesGuide currentRole={actor?.role} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeliveryModal && (
+        <div
+          className="boundaries-modal-backdrop"
+          onClick={() => setShowDeliveryModal(false)}
+        >
+          <div
+            className="boundaries-modal-dialog delivery-report-modal-dialog"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="boundaries-modal-header">
+              <div className="header-title-row">
+                <Crown size={18} className="text-amber" />
+                <h3>Owner Delivery Intelligence & Late Tasks Audit</h3>
+              </div>
+              <button
+                type="button"
+                className="close-boundaries-btn"
+                onClick={() => setShowDeliveryModal(false)}
+                aria-label="Close dialog"
+              >
+                <X size={17} strokeWidth={1.8} />
+              </button>
+            </div>
+            <div className="boundaries-modal-content">
+              <OwnerDeliveryReport
+                tasks={tasks}
+                members={members}
+                onSelectTask={(task) => {
+                  setShowDeliveryModal(false);
+                  setSelectedTask(task);
+                }}
+              />
             </div>
           </div>
         </div>

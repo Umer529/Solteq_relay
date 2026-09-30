@@ -45,10 +45,12 @@ export function ProjectProvider({
   children,
   currentUserId,
   initialSnapshot,
+  header,
 }: {
   children?: React.ReactNode;
   currentUserId: string;
   initialSnapshot: ProjectSnapshot;
+  header?: React.ReactNode;
 }) {
   const projectId = initialSnapshot.project.id;
   const replaceSnapshot = useProjectStore((state) => state.replaceSnapshot);
@@ -108,6 +110,7 @@ export function ProjectProvider({
         setActiveTab,
       }}
     >
+      {header}
       <ProjectTabs projectId={projectId} />
       <div className="project-content">
         <div style={{ display: activeTab === "board" ? "contents" : "none" }}>
