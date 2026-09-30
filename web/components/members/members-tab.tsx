@@ -9,7 +9,6 @@ import { useProjectContext } from "@/components/projects/project-provider";
 import { useProjectStore } from "@/store/project-store";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { addProjectMember, changeProjectMemberRole, removeProjectMember } from "@/lib/browser-api";
-import { RoleBoundariesGuide } from "@/components/projects/role-boundaries-guide";
 import { OwnerDeliveryReport } from "@/components/projects/owner-delivery-report";
 
 export function MembersTab({ notice }: { notice?: { error?: string; message?: string } }) {
@@ -293,7 +292,6 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
       {(actorRole === "owner" || actorRole === "admin") && (
         <OwnerDeliveryReport tasks={tasks} members={members} />
       )}
-      <RoleBoundariesGuide currentRole={actorRole} />
     </div>
   );
 }

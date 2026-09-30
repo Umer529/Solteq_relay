@@ -2,7 +2,6 @@
 
 import { LayoutGrid, MessageSquare, Activity, Users } from "lucide-react";
 import { useProjectContext, type ProjectTabId } from "./project-provider";
-import { NotificationCenter } from "@/components/notifications/notification-center";
 
 const tabItems: Array<{
   id: ProjectTabId;
@@ -16,8 +15,7 @@ const tabItems: Array<{
 ];
 
 export function ProjectTabs({ projectId }: { projectId: string }) {
-  const { activeTab, setActiveTab, initialSnapshot, currentUserId } = useProjectContext();
-  const currentRole = initialSnapshot.members.find((m) => m.userId === currentUserId)?.role;
+  const { activeTab, setActiveTab } = useProjectContext();
 
   return (
     <nav className="project-tabs" aria-label="Project sections">
@@ -43,10 +41,6 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
             </a>
           );
         })}
-      </div>
-      <div className="project-tabs-right">
-        <NotificationCenter />
-        {currentRole && <span className={`role-badge role-${currentRole}`}>{currentRole}</span>}
       </div>
     </nav>
   );

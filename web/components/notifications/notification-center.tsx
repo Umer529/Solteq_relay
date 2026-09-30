@@ -45,11 +45,10 @@ export interface NotificationItem {
 }
 
 export function NotificationCenter() {
-  const { projectId, currentUserId, setActiveTab } = useProjectContext();
+  const { projectId, currentUserId } = useProjectContext();
   const activity = useProjectStore((state) => state.activity);
   const tasks = useProjectStore((state) => state.tasks);
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setNotificationTab] = useState<"for_you" | "all">("for_you");
   const [readIds, setReadIds] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastSeenActivityId = useRef<string | null>(null);
@@ -241,26 +240,17 @@ export function NotificationCenter() {
       if (latestNote && latestNote.isForYou) {
         toast.info(latestNote.title, {
           description: latestNote.description,
-          action: {
-            label: "View",
-            onClick: () => handleNotificationClick(latestNote),
-          },
         });
       }
     }
   }, [activity, notifications]);
 
-  // Filtered lists
+  // Filter list exclusively for the user
   const forYouList = useMemo(() => notifications.filter((n) => n.isForYou), [notifications]);
-  const activeList = activeTab === "for_you" ? forYouList : notifications;
 
   const unreadForYouCount = useMemo(
     () => forYouList.filter((n) => !n.isRead).length,
     [forYouList],
-  );
-  const unreadTotalCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
-    [notifications],
   );
 
   // Close dropdown on click outside
@@ -276,21 +266,13 @@ export function NotificationCenter() {
     }
   }, [isOpen]);
 
+  // Marks notification as read without redirecting or navigating to any page
   function handleNotificationClick(item: NotificationItem) {
     markAsRead([item.id]);
-    setActiveTab(item.destinationTab);
-    if (item.taskId && item.destinationTab === "board") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("task", item.taskId);
-      window.history.pushState(null, "", url.toString());
-      // Trigger popstate so board-client reacts to search params
-      window.dispatchEvent(new Event("popstate"));
-    }
-    setIsOpen(false);
   }
 
   function handleMarkAllAsRead() {
-    const unreadIds = activeList.map((n) => n.id);
+    const unreadIds = forYouList.map((n) => n.id);
     markAsRead(unreadIds);
     toast.success("All caught up! Notifications marked as read.");
   }
@@ -326,11 +308,9 @@ export function NotificationCenter() {
         title="View changes & notifications"
       >
         <Bell size={17} strokeWidth={1.8} />
-        {unreadForYouCount > 0 ? (
+        {unreadForYouCount > 0 && (
           <span className="notification-badge pulse">{unreadForYouCount > 9 ? "9+" : unreadForYouCount}</span>
-        ) : unreadTotalCount > 0 ? (
-          <span className="notification-dot" />
-        ) : null}
+        )}
       </button>
 
       {isOpen && (
@@ -340,19 +320,21 @@ export function NotificationCenter() {
               <div className="title-with-count">
                 <strong>Notifications</strong>
                 {unreadForYouCount > 0 && (
-                  <span className="unread-pill">{unreadForYouCount} new for you</span>
+                  <span className="unread-pill">{unreadForYouCount} new</span>
                 )}
               </div>
               <div className="header-actions">
-                <button
-                  type="button"
-                  className="mark-all-read-btn"
-                  onClick={handleMarkAllAsRead}
-                  title="Mark all as read"
-                >
-                  <CheckCheck size={14} />
-                  <span>Mark all read</span>
-                </button>
+                {unreadForYouCount > 0 && (
+                  <button
+                    type="button"
+                    className="mark-all-read-btn"
+                    onClick={handleMarkAllAsRead}
+                    title="Mark all as read"
+                  >
+                    <CheckCheck size={14} />
+                    <span>Mark all read</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="close-popover-btn"
@@ -363,54 +345,24 @@ export function NotificationCenter() {
                 </button>
               </div>
             </div>
-
-            {/* Filter Tabs */}
-            <div className="popover-tabs" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "for_you"}
-                className={`popover-tab ${activeTab === "for_you" ? "active" : ""}`}
-                onClick={() => setNotificationTab("for_you")}
-              >
-                <span>For You</span>
-                {unreadForYouCount > 0 && <span className="tab-counter">{unreadForYouCount}</span>}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "all"}
-                className={`popover-tab ${activeTab === "all" ? "active" : ""}`}
-                onClick={() => setNotificationTab("all")}
-              >
-                <span>All Activity</span>
-                {unreadTotalCount > 0 && <span className="tab-counter neutral">{unreadTotalCount}</span>}
-              </button>
-            </div>
           </div>
 
           <div className="popover-body">
-            {activeList.length === 0 ? (
+            {forYouList.length === 0 ? (
               <div className="empty-notifications">
                 <div className="empty-icon-circle">
                   <CheckCircle2 size={24} className="text-emerald" />
                 </div>
                 <strong>All caught up!</strong>
-                <p>
-                  {activeTab === "for_you"
-                    ? "No new tasks or changes assigned to you."
-                    : "No team activity recorded yet."}
-                </p>
+                <p>No new notifications or tasks for you.</p>
               </div>
             ) : (
               <div className="notification-list">
-                {activeList.map((item) => (
+                {forYouList.map((item) => (
                   <button
                     key={item.id}
                     type="button"
-                    className={`notification-item ${!item.isRead ? "unread" : "read"} ${
-                      item.isForYou ? "highlight-for-you" : ""
-                    }`}
+                    className={`notification-item ${!item.isRead ? "unread" : "read"} highlight-for-you`}
                     onClick={() => handleNotificationClick(item)}
                   >
                     <div className="item-icon-col">{renderIcon(item.iconType)}</div>
@@ -420,11 +372,6 @@ export function NotificationCenter() {
                         <span className="item-time">{relativeTime(item.createdAt)}</span>
                       </div>
                       <p className="item-desc">{item.description}</p>
-                      {item.isForYou && (
-                        <div className="item-tags">
-                          <span className="tag-for-you">Directly for you</span>
-                        </div>
-                      )}
                     </div>
                     {!item.isRead && <span className="unread-dot" aria-label="Unread" />}
                   </button>
