@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { ProjectRole } from "@relay/shared";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 export function ProjectHeaderBar({
   projectName,
@@ -55,7 +56,10 @@ export function ProjectHeaderBar({
             <p>{projectDescription || "No project description"}</p>
           </div>
         </div>
-        <span className={`role-badge role-${projectRole}`}>{projectRole}</span>
+        <div className="project-header-right">
+          <NotificationCenter />
+          <span className={`role-badge role-${projectRole}`}>{projectRole}</span>
+        </div>
       </header>
       {mobileMenuOpen && (
         <div

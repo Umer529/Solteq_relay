@@ -9,6 +9,7 @@ import { useProjectContext } from "@/components/projects/project-provider";
 import { useProjectStore } from "@/store/project-store";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { addProjectMember, changeProjectMemberRole, removeProjectMember } from "@/lib/browser-api";
+import { RoleBoundariesGuide } from "@/components/projects/role-boundaries-guide";
 
 export function MembersTab({ notice }: { notice?: { error?: string; message?: string } }) {
   const router = useRouter();
@@ -283,6 +284,7 @@ export function MembersTab({ notice }: { notice?: { error?: string; message?: st
           );
         })}
       </section>
+      <RoleBoundariesGuide currentRole={actorRole} />
     </div>
   );
 }

@@ -114,3 +114,92 @@ export function can(
 
   return false;
 }
+
+export interface RoleBoundary {
+  role: ProjectRole;
+  title: string;
+  tagline: string;
+  canCreateTasks: boolean;
+  canAssignToOwner: boolean;
+  canManageMembers: boolean;
+  canDeleteProject: boolean;
+  summary: string;
+  rules: string[];
+}
+
+export const ROLE_BOUNDARIES: Record<ProjectRole, RoleBoundary> = {
+  owner: {
+    role: "owner",
+    title: "Project Owner",
+    tagline: "Product lead & backlog authority",
+    canCreateTasks: true,
+    canAssignToOwner: true,
+    canManageMembers: true,
+    canDeleteProject: true,
+    summary: "Full authority over project roadmap, membership, and task allocations.",
+    rules: [
+      "Can create, edit, and delete any requirement or task",
+      "Can assign tasks to any member, admin, or self",
+      "Can manage project roles, add/remove members, and delete project",
+    ],
+  },
+  admin: {
+    role: "admin",
+    title: "Project Admin",
+    tagline: "Execution manager & team coordinator",
+    canCreateTasks: true,
+    canAssignToOwner: true,
+    canManageMembers: true,
+    canDeleteProject: false,
+    summary: "Manages day-to-day operations, task delegations, and team collaboration.",
+    rules: [
+      "Can create, edit, and delete requirements",
+      "Can assign tasks to any team member",
+      "Can invite members and adjust member roles (cannot modify owner or delete project)",
+    ],
+  },
+  member: {
+    role: "member",
+    title: "Project Member",
+    tagline: "Contributor & task executor",
+    canCreateTasks: true,
+    canAssignToOwner: false,
+    canManageMembers: false,
+    canDeleteProject: false,
+    summary: "Delivers assigned tasks and collaborates with the project team.",
+    rules: [
+      "Cannot assign requirements or tasks to Project Owner or Admins",
+      "Can create tasks assigned to self or leave unassigned for triage",
+      "Can move assigned tasks across board stages (Todo, In Progress, Done)",
+      "Can edit tasks they created or are assigned to",
+    ],
+  },
+  viewer: {
+    role: "viewer",
+    title: "Project Viewer",
+    tagline: "Stakeholder & observer",
+    canCreateTasks: false,
+    canAssignToOwner: false,
+    canManageMembers: false,
+    canDeleteProject: false,
+    summary: "Observes project progress, requirements, and discussions without mutation rights.",
+    rules: [
+      "Read-only access to board, tasks, and activity",
+      "Cannot create, edit, delete, or move tasks",
+      "Cannot assign tasks or post chat messages",
+    ],
+  },
+};
+
+export function canAssignTask(
+  actorRole: ProjectRole,
+  targetRole: ProjectRole | null | undefined,
+): boolean {
+  if (!targetRole) return true;
+  if (actorRole === "owner" || actorRole === "admin") return true;
+  if (actorRole === "member") {
+    return targetRole !== "owner" && targetRole !== "admin";
+  }
+  return false;
+}
+

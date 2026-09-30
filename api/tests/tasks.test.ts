@@ -11,7 +11,12 @@ const taskMocks = vi.hoisted(() => ({
   updateTask: vi.fn(),
 }));
 
+const projectMocks = vi.hoisted(() => ({
+  getMembership: vi.fn(),
+}));
+
 vi.mock("../src/services/tasks.js", () => taskMocks);
+vi.mock("../src/services/projects.js", () => projectMocks);
 
 vi.mock("../src/middleware/authenticate.js", () => ({
   authenticate(request_: Request, _response: Response, next: NextFunction) {
@@ -84,6 +89,42 @@ describe("task routes", () => {
       expect.objectContaining({ title: "Test requirement" }),
       actorId,
     );
+  });
+
+  it("prevents a member from assigning a requirement to the project owner or admin", async () => {
+    projectMocks.getMembership.mockResolvedValue({ role: "owner" });
+
+    const response = await request(app)
+      .post(`/projects/${projectId}/tasks`)
+      .set("x-test-role", "member")
+      .send({
+        title: "Unauthorized assignment",
+        priority: "high",
+        position: 0,
+        assigneeId: "10000000-0000-4000-8000-000000000002",
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
+    expect(response.body.error.message).toContain("Members cannot assign requirements to project owners");
+    expect(taskMocks.createTask).not.toHaveBeenCalled();
+  });
+
+  it("allows an owner to assign a requirement to anyone", async () => {
+    projectMocks.getMembership.mockResolvedValue({ role: "member" });
+
+    const response = await request(app)
+      .post(`/projects/${projectId}/tasks`)
+      .set("x-test-role", "owner")
+      .send({
+        title: "Owner task assignment",
+        priority: "high",
+        position: 0,
+        assigneeId: "10000000-0000-4000-8000-000000000002",
+      });
+
+    expect(response.status).toBe(201);
+    expect(taskMocks.createTask).toHaveBeenCalled();
   });
 
   it("rejects a viewer creating a requirement", async () => {

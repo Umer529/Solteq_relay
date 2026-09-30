@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { TASK_POSITION_GAP, can, type ProjectSnapshot, type Task, type TaskStatus } from "@relay/shared";
-import { ListFilter, Plus } from "lucide-react";
+import { ListFilter, Plus, ShieldAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import { useProjectStore } from "@/store/project-store";
 import { ProgressSummary } from "./progress-summary";
 import { TaskColumn } from "./task-column";
 import { TaskDrawer, type TaskDraft } from "./task-drawer";
+import { RoleBoundariesGuide } from "@/components/projects/role-boundaries-guide";
 
 const statuses: TaskStatus[] = ["todo", "in_progress", "done"];
 
@@ -47,6 +48,7 @@ export function BoardClient({
   const [selectedTask, setSelectedTask] = useState<Task | null | undefined>();
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [completionFilter, setCompletionFilter] = useState<string | null>(null);
+  const [showBoundariesModal, setShowBoundariesModal] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -248,6 +250,15 @@ export function BoardClient({
           </button>
         )}
         <button
+          className="ghost-button compact role-boundaries-btn"
+          type="button"
+          onClick={() => setShowBoundariesModal(true)}
+          title="View role boundaries and permissions policy"
+        >
+          <ShieldAlert size={14} strokeWidth={1.8} />
+          <span>Role boundaries</span>
+        </button>
+        <button
           className="primary-button compact"
           type="button"
           disabled={!mayCreate}
@@ -277,12 +288,45 @@ export function BoardClient({
           key={selectedTask?.id ?? "new"}
           canDelete={Boolean(selectedCanDelete)}
           canEdit={Boolean(selectedCanEdit)}
+          actorRole={actor?.role}
           members={members}
           onClose={() => setSelectedTask(undefined)}
           onDelete={selectedTask ? removeSelectedTask : null}
           onSave={saveTask}
           task={selectedTask}
         />
+      )}
+
+      {showBoundariesModal && (
+        <div
+          className="boundaries-modal-backdrop"
+          onClick={() => setShowBoundariesModal(false)}
+        >
+          <div
+            className="boundaries-modal-dialog"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="boundaries-modal-header">
+              <div className="header-title-row">
+                <ShieldAlert size={18} className="modal-shield-icon" />
+                <h3>Project Role Boundaries</h3>
+              </div>
+              <button
+                type="button"
+                className="close-boundaries-btn"
+                onClick={() => setShowBoundariesModal(false)}
+                aria-label="Close dialog"
+              >
+                <X size={17} strokeWidth={1.8} />
+              </button>
+            </div>
+            <div className="boundaries-modal-content">
+              <RoleBoundariesGuide currentRole={actor?.role} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   can,
+  canAssignTask,
   changeTaskStatusSchema,
   createTaskSchema,
   projectIdSchema,
@@ -10,6 +11,7 @@ import {
 import { AppError } from "../lib/errors.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireMember } from "../middleware/require-member.js";
+import { getMembership } from "../services/projects.js";
 import {
   changeTaskStatus,
   createTask,
@@ -53,6 +55,17 @@ tasksRouter.post("/:id/tasks", requireMember, async (request, response) => {
     throw new AppError(403, "FORBIDDEN", "Viewers cannot create requirements.");
   }
 
+  if (input.assigneeId) {
+    const targetMembership = await getMembership(projectId, input.assigneeId);
+    if (!canAssignTask(member.role, targetMembership.role)) {
+      throw new AppError(
+        403,
+        "FORBIDDEN",
+        `Members cannot assign requirements to project ${targetMembership.role}s.`,
+      );
+    }
+  }
+
   response.status(201).json({ data: await createTask(projectId, input, user.id) });
 });
 
@@ -70,6 +83,17 @@ tasksRouter.patch("/:id/tasks/:taskId", requireMember, async (request, response)
     })
   ) {
     throw new AppError(403, "FORBIDDEN", "You can only edit requirements you created or own.");
+  }
+
+  if (input.assigneeId && input.assigneeId !== task.assigneeId) {
+    const targetMembership = await getMembership(projectId, input.assigneeId);
+    if (!canAssignTask(member.role, targetMembership.role)) {
+      throw new AppError(
+        403,
+        "FORBIDDEN",
+        `Members cannot assign requirements to project ${targetMembership.role}s.`,
+      );
+    }
   }
 
   response.json({ data: await updateTask(task, input, user.id) });

@@ -1,5 +1,6 @@
 import { loginAction } from "../actions";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface LoginPageProps {
   searchParams: Promise<{ error?: string; message?: string }>;
@@ -24,12 +25,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
         <div className="field">
           <label htmlFor="password">Password</label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             minLength={8}
+            placeholder="Enter your password"
             required
           />
         </div>

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import type { ProjectRole } from "@relay/shared";
 import type { ProjectSummary } from "@/lib/data/projects";
 import { createProvisionedUser } from "@/lib/browser-api";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const ROLE_OPTIONS: Array<{
   id: ProjectRole;
@@ -239,20 +240,17 @@ export function UserDirectoryClient({
                   <span>Generate</span>
                 </button>
               </div>
-              <div className="password-input-wrap">
-                <input
-                  id="password"
-                  name="password"
-                  type="text"
-                  placeholder="Min 6 characters"
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="off"
-                  disabled={isSubmitting}
-                />
-              </div>
+              <PasswordInput
+                id="password"
+                name="password"
+                placeholder="Min 6 characters"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="off"
+                disabled={isSubmitting}
+              />
             </div>
 
             {/* Assign to Project Field */}

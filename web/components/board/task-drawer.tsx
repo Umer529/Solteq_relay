@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { ShieldAlert, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import type { Membership, Task, TaskPriority } from "@relay/shared";
+import { canAssignTask, type Membership, type ProjectRole, type Task, type TaskPriority } from "@relay/shared";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useProjectStore } from "@/store/project-store";
 
@@ -20,6 +20,7 @@ export interface TaskDraft {
 export function TaskDrawer({
   task,
   members: propMembers,
+  actorRole,
   canEdit,
   canDelete,
   onClose,
@@ -28,6 +29,7 @@ export function TaskDrawer({
 }: {
   task: Task | null;
   members: Membership[];
+  actorRole?: ProjectRole;
   canEdit: boolean;
   canDelete: boolean;
   onClose: () => void;
@@ -62,11 +64,20 @@ export function TaskDrawer({
       return;
     }
 
+    const assigneeId = String(formData.get("assigneeId") ?? "") || null;
+    if (assigneeId && actorRole) {
+      const targetMember = members.find((m) => m.userId === assigneeId);
+      if (targetMember && !canAssignTask(actorRole, targetMember.role)) {
+        toast.error(`Members cannot assign requirements to project ${targetMember.role}s.`);
+        return;
+      }
+    }
+
     await onSave({
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? "").trim() || null,
       priority: String(formData.get("priority") ?? "medium") as TaskPriority,
-      assigneeId: String(formData.get("assigneeId") ?? "") || null,
+      assigneeId,
       dueDate,
     });
   }
@@ -94,6 +105,17 @@ export function TaskDrawer({
           <X size={17} strokeWidth={1.7} />
         </button>
       </div>
+
+      {actorRole === "member" && (
+        <div className="drawer-role-boundary-alert" role="note">
+          <ShieldAlert size={14} className="boundary-icon" />
+          <span>
+            <strong>Role boundary:</strong> Members cannot assign requirements to Project Owners or
+            Admins.
+          </span>
+        </div>
+      )}
+
       <form className="drawer-form" action={submit}>
         <fieldset disabled={!canEdit} title={!canEdit ? "You can only edit requirements assigned to you or created by you" : undefined}>
           <div className="field">
@@ -112,12 +134,31 @@ export function TaskDrawer({
               </select>
             </div>
             <div className="field">
-              <label htmlFor="task-assignee">Assignee</label>
+              <label htmlFor="task-assignee">
+                Assignee
+                {actorRole === "member" && (
+                  <span className="field-hint-restricted"> (Cannot assign to Owner/Admin)</span>
+                )}
+              </label>
               <select id="task-assignee" name="assigneeId" defaultValue={task?.assigneeId ?? ""}>
                 <option value="">Unassigned</option>
-                {members.map((member) => (
-                  <option key={member.userId} value={member.userId}>{member.profile.displayName}</option>
-                ))}
+                {members.map((member) => {
+                  const cannotAssign = actorRole ? !canAssignTask(actorRole, member.role) : false;
+                  return (
+                    <option
+                      key={member.userId}
+                      value={member.userId}
+                      disabled={cannotAssign}
+                    >
+                      {member.profile.displayName}
+                      {cannotAssign
+                        ? ` (${member.role} — restricted)`
+                        : member.role === "owner"
+                        ? " (Owner)"
+                        : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>
